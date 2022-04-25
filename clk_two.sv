@@ -1,7 +1,7 @@
 module clk_two_electric_boogaloo (
 	input CLK,
 	input RESET,
-	input soft,
+	input drop,
 	input [2:0] level,
 	output piece_clk
 );
@@ -19,6 +19,7 @@ parameter SOFT_DROP = 700000;
 
 //assign clock divider based on level input
 logic [25:0] divider; 
+always_comb begin
 case (level)
 	0: divider = LEVEL_0;
 	1: divider = LEVEL_1;
@@ -30,23 +31,24 @@ case (level)
 	7: divider = LEVEL_7;
 	default: divider = LEVEL_1;
 endcase
-
+end
 //counting to divide the time according to the level/soft drop
 logic [25:0] counter;
-always @ (posedge clk) begin
+always @ (posedge CLK) begin
 	if (RESET) counter <= 0;
 	else begin
-		if ((drop) && (counter >= SOFT_DROP)) || ((~drop == 0) && (counter >= divider)) 
+		if (((drop) && (counter >= SOFT_DROP)) || ((~drop == 0) && (counter >= divider)))
 			counter <= 0;
 		else
 			counter <= counter + 1;
 	end
 end
 
+always_comb begin
 //clock the output
 if (drop)
-	piece_clk = (counter == SOFT_DROP)
+	piece_clk = (counter == SOFT_DROP);
 else
 	piece_clk = (counter == divider);
-
+end
 endmodule

@@ -1,0 +1,7 @@
+module clk_two_electric_boogaloo (
+	input CLK,
+	input RESET,
+	input soft_drop,
+	input [3:0] speed,
+	output piece_clk
+);

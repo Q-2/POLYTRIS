@@ -1,0 +1,66 @@
+module drawing(
+    input [2:0] level,
+	output [11:0] palette [3]
+    );
+
+/*
+Block colors:
+Each color is 12 bits, round each of the below
+    level 0: 3d be ff       00 57 f7
+    level 1: 7f d1 00       00 a7 00
+    level 2: fa 77 fa       dd 02 cf
+    level 3: 5b dc 58       00 58 fa
+    level 4: 5b f9 9a       ef 00 5b
+    level 5: 54 ef 92       6b 87 ff
+    level 6: f9 36 01       7f 7f 7f
+    level 7: 6b 45 ff       ab 00 20
+*/
+//color registers for the pieces, which correspond to each level
+logic [11:0] PIECE_REG_0 [4];
+logic [11:0] PIECE_REG_1 [4];
+logic [11:0] PIECE_REG_2 [4];
+logic [11:0] PIECE_REG_3 [4];
+logic [11:0] PIECE_REG_4 [4];
+logic [11:0] PIECE_REG_5 [4];
+logic [11:0] PIECE_REG_6 [4];
+logic [11:0] PIECE_REG_7 [4];
+
+PIECE_REG_0[0] = 12h'4cf;
+PIECE_REG_0[1] = 12h'06f;
+PIECE_REG_0[2] = 12h'fff;
+PIECE_REG_0[3] = 12h'000;
+
+PIECE_REG_1[0] = 12h'8d0;
+PIECE_REG_1[1] = 12h'0a0;
+PIECE_REG_1[2] = 12h'fff;
+PIECE_REG_1[3] = 12h'000;
+
+PIECE_REG_2[0] = 12h'f7f;
+PIECE_REG_2[1] = 12h'e0d;
+PIECE_REG_2[2] = 12h'fff;
+PIECE_REG_2[3] = 12h'000;
+
+PIECE_REG_3[0] = 12h'6e6;
+PIECE_REG_3[1] = 12h'06f;
+PIECE_REG_3[2] = 12h'fff;
+PIECE_REG_3[3] = 12h'000;
+
+PIECE_REG_4[0] = 12h'6fa;
+PIECE_REG_4[1] = 12h'f06;
+PIECE_REG_4[2] = 12h'fff;
+PIECE_REG_4[3] = 12h'000;
+
+PIECE_REG_5[0] = 12h'5f9;
+PIECE_REG_5[1] = 12h'78f;
+PIECE_REG_5[2] = 12h'fff;
+PIECE_REG_5[3] = 12h'000;
+
+PIECE_REG_6[0] = 12h'f30;
+PIECE_REG_6[1] = 12h'888;
+PIECE_REG_6[2] = 12h'fff;
+PIECE_REG_6[3] = 12h'000;
+
+PIECE_REG_7[0] = 12h'74f;
+PIECE_REG_7[1] = 12h'b02;
+PIECE_REG_7[2] = 12h'fff;
+PIECE_REG_7[3] = 12h'000;

@@ -1,29 +1,3 @@
-/************************************************************************
-Avalon-MM Interface VGA Text mode display
-
-Register Map:
-0x000-0x0257 : VRAM, 80x30 (2400 byte, 600 word) raster order (first column then row)
-0x258        : control register
-
-VRAM Format:
-X->
-[ 31  30-24][ 23  22-16][ 15  14-8 ][ 7    6-0 ]
-[IV3][CODE3][IV2][CODE2][IV1][CODE1][IV0][CODE0]
-
-IVn = Draw inverse glyph
-CODEn = Glyph code from IBM codepage 437
-
-Control Register Format:
-[[31-25][24-21][20-17][16-13][ 12-9][ 8-5 ][ 4-1 ][   0    ] 
-[[RSVD ][FGD_R][FGD_G][FGD_B][BKG_R][BKG_G][BKG_B][RESERVED]
-
-VSYNC signal = bit which flips on every Vsync (time for new frame), used to synchronize software
-BKG_R/G/B = Background color, flipped with foreground when IVn bit is set
-FGD_R/G/B = Foreground color, flipped with background when Inv bit is set
-
-************************************************************************/
-`define NUM_REGS 601 //80*30 characters / 4 characters per register
-`define CTRL_REG 600 //index of control register
 
 module vga_text_avl_interface (
 	// Avalon Clock Input, note this clock is also used for VGA, so this must be 50Mhz
@@ -60,16 +34,7 @@ logic write;
 logic [3:0] FGD_R, FGD_G, FGD_B, BKG_R, BKG_G, BKG_B;
 logic PIXEL_VAL;
 logic [15:0] CHAR_VAL;
-logic [6:0] REGPOS_Y;
-logic [5:0] REGPOS_X;
-
-//lab 7.2 new variables
-logic [11:0] CHARLES;	//word address
-logic [31:0] AGENT_Q;	//q_b output
-logic [11:0] LSD_VISION; //colors
-logic [3:0] FGD_ID, BKG_ID;
-logic [3:0] FGD_REG, BKG_REG;
-logic [11:0] FGD_LSD_COLOR, BKG_LSD_COLOR;
+logic [3:0] LENGTH; 
 
 //Declare submodules..e.g. VGA controller, ROMS, etc
 
@@ -100,20 +65,82 @@ vga_controller text_writing_controller_instantiation(
 .DrawX(DrawX),
 .DrawY(DrawY)
 );
-                   
+
+/*                   
 font_rom(
 .addr(FONT_ADDR), 
 .data(FONT_DATA)
 );
+*/
 
-//get colors from memory
-logic [31:0] PALLET_REG [8];
+logic [2:0] level;
+logic [11:0] palette [3];
+//call colors from drawing
+drawing level_colors(.*);
+
+//background colors
+logic [11:0] BGD_REG [4];
+assign BGD_REG[0] = 12'h777; //gray
+assign BGD_REG[1] = 12'h000; //black
+assign BGD_REG[2] = 12'hfff; //white
+assign BGD_REG[3] = 12'h620; //red
+
+//obtain board position
+logic [8:0] BoardX, BoardY;
 always_ff @(posedge CLK) begin
-    if ((AVL_ADDR[11]) && (AVL_WRITE))
-		PALLET_REG[AVL_ADDR[2:0]]  <= AVL_WRITEDATA;
+//board
+	if ((DrawX > 240) && (DrawX < 400)) begin
+		// BoardX = DrawX - 240;
+		// BoardY = DrawY ;
+		red = 4'h0;
+		blue = 4'h0;
+		green = 4'h0;
+	end
+//board borders
+	else if (((DrawX > 232) && (DrawX < 240)) || ((DrawX > 400) && (DrawX < 408))) begin
+		red = 4'hc;
+		blue = 4'hf;
+		green = 4'hf; 
+	end
+ //score box
+ 	else if (((DrawX > 432) && (DrawX < 544)) && ((DrawY > 32) && (DrawY < 144))) begin
+ 		red = 4'h0;
+ 		blue = 4'h0;
+ 		green = 4'h0;
+ 	end
+ //level box
+ 	else if (((DrawX > 432) && (DrawX < 528)) && ((DrawY > 304) && (DrawY < 352))) begin
+ 		red = 4'h0;
+ 		blue = 4'h0;
+ 		green = 4'h0;
+ 	end
+ //stats box
+ 	else if (((DrawX > 62) && (DrawX < 192)) && ((DrawY > 128) && (DrawY < 432))) begin
+ 		red = 4'h0;
+ 		blue = 4'h0;
+ 		green = 4'h0;
+ 	end
+//the rest of the background
+	else begin
+		red = 4'ha;
+		blue = 4'ha;
+		green = 4'ha;
+	end
+//next piece border
+	if (((DrawX > 424) && (DrawX < 504)) && ((DrawY > 184) && (DrawY < 280))) begin
+		red = 4'hc;
+		blue = 4'hf;
+		green = 4'hf;
+	end
+	else;
+//next piece box
+	if (((DrawX > 432) && (DrawX < 496)) && ((DrawY > 192) && (DrawY < 272))) begin
+		red = 4'h0;
+		blue = 4'h0;
+		green = 4'h0;
+	end
+	else;
 end
-
-
 /* 
 // Read and write from AVL interface to register block, note that READ waitstate = 1, so this should be in always_ff
 always_ff @(posedge CLK) begin
@@ -129,23 +156,26 @@ always_ff @(posedge CLK) begin
 end
 */
 
+
+/*
 always_comb begin
 PIXEL_VAL = FONT_DATA[7-DrawX[2:0]]^CHAR_VAL[15];
 FONT_ADDR = {CHAR_VAL[14:8], DrawY[3:0]};
 REGPOS_Y = DrawY[9:4];
 REGPOS_X = DrawX[9:4];
 CHARLES = REGPOS_Y*40+REGPOS_X;
-case(DrawX[3])
-	1'b0: CHAR_VAL = AGENT_Q[15:0];
-	1'b1: CHAR_VAL = AGENT_Q[31:16];
+CHAR_VAL = AGENT_Q;
 endcase
 
+
+
 //sprite retrieval  |||  row major order, position row, col -> position by (row*Ncol + col)
-
 //Color retrieval
-LSD_VISION = CHAR_VAL[7:0];
+LSD_VISION = CHAR_VAL[4:3];
 
-//fgd color
+
+
+//check if it's a piece
 FGD_ID = LSD_VISION[7:4];
 FGD_REG = FGD_ID[3:1]; //divide by two, take floor to get palette register
 if (FGD_ID[0]==0)
@@ -189,6 +219,6 @@ always_ff @(posedge VGA_CLK) begin
 			blue = 4'b0000;
 		end
 end
-
+*/
 	
 endmodule
