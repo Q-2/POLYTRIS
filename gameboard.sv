@@ -1,120 +1,113 @@
 module gameboard (
-    input logic piece_clk,
-    input logic piece_buffer, //may need more bits
+    input logic [3:0]piece_buffer[3:0], //may need more bits
     input logic clk,
-    input logic reset 
-    input logic drop
-    input logic [1:0]rotate
-    input logic state //may need more bits
-    input logic board_height //may need more bits
-    input logic board_width //may need more bits
-    output logic board_data //may need more bits
-    
-);
+    input logic [31:0]board_data
+    input logic ROTATELEFT,  ROTATERIGHT, FALL, MOVELEFT, MOVERIGHT, PIECEPLACED, CLEARLINECHECK, CLEARLINEACT, CLEARLINE, KONAMI, NONEINPUT, HOLDPIECE, ENDGAME, CLEARALL,
+    output logic [10:0] RAM_ROW_ADDR
+    output logic RAM_WE, RAM_RE,
+    input logic [31:0]RAM_READDATA
+    output logic RAM_WRITEDATA
+    output logic [3:0]collision
+    output logic [3:0]sandboxLR
+    output logic [4:0]sandboxUD
+    output logic [3:0]sandbox[3:0]
+ );
 /*
-board reg byte biology!N
-byte[0] = block old?
-byte[1] = block curr?
-byte[2-3] = block style
+This module controls the rotations, translations, and collisions between board pieces and the board itself.
+
+
+
 */
-//ram module goes here 
-//todo: fix issue where they will do both for loops at once, flag system?
-//
-
-// Board Register Instantiation:
-logic [3:0] game_board [29:0][9:0];
-logic [3:0] copy_board [29:0][9:0];
-//
-if(state == LOSS || reset) begin
-    for (int i = 0; i < 30; i++) begin
-        for (int j = 0; j < 9; j++) begin
-            game_board[i][j][3:0] = 4'b0000;
-            copy_board[i][j][3:0] = 4'b0000;
-        end
-    end
+logic [15:0]interpreted_readdata
+logic [3:0]sandboxLR = 4'd5
+logic [4:0]sandboxUD = 5'd0
+logic [3:0]sandbox[3:0]
+logic [3:0]preliminarysandbox[3:0]
+int bitpair
+for(bitpair = 0; bitpair < 32; bitpair = bitpair + 2)begin
+    interpreted_readdata[bitpair/2] = RAM_READDATA[bitpair] || RAM_READDATA[bitpair+1]
 end
-always_ff @ posedge clk begin
-
-
-if(state == FALL) begin
-    for (int i = 0; i < 30; i++) begin
-        for (int j = 0; j < 9; j++) begin
-            copy_board[i][j][0] = game_board[i][j][0];
-            copy_board[i][j][3:2] = game_board[i][j][3:2];
-            copy_board[i+1][j][1] = game_board[i][j][1];
-            
-        end
-    end
-    for (int i = 0; i < 30; i++) begin
-        for (int j = 0; j < 9; j++) begin
-            if(~(copy_board[i][j][0] & copy_board[i][j][1])) begin
-                game_board[i][j][3:0] = copy_board[i][j][3:0]
-            end
-        end
-    end
+if(  PIECEPLACED ) begin
+ sandbox = piece_buffer
 end
-if(state == MOVEL) begin
-    for (int i = 0; i < 30; i++) begin
-        for (int j = 0; j < 9; j++) begin
-            copy_board[i][j][0] = game_board[i][j][0];
-            copy_board[i][j][3:2] = game_board[i][j][3:2];
-            copy_board[i][j-1][1] = game_board[i][j][1];
-        end
-    end
-    for (int i = 0; i < 30; i++) begin
-        for (int j = 0; j < 9; j++) begin
-            if(~(copy_board[i][j][0] & copy_board[i][j][1])) begin
-                game_board[i][j][3:0] = copy_board[i][j][3:0]
-            end
-        end
-    end
-end
-if(state == MOVER) begin
-    for (int i = 0; i < 30; i++) begin
-        for (int j = 0; j < 9; j++) begin
-            copy_board[i][j][0] = game_board[i][j][0];
-            copy_board[i][j][3:2] = game_board[i][j][3:2];
-            copy_board[i][j+1][1] = game_board[i][j][1];
-        end
-    end
-    for (int i = 0; i < 30; i++) begin
-        for (int j = 0; j < 9; j++) begin
-            if(~(copy_board[i][j][0] & copy_board[i][j][1])) begin
-                game_board[i][j][3:0] = copy_board[i][j][3:0]
-            end
+
+if(  ROTATELEFT ) begin
+/*
+1 2 3 4            4 8 . .
+5 6 7 8            3 7 . .
+9 0 . .  ------>   2 6 0 .
+13. . .            1 5 9 13
+*/
+    int i;
+    int j;
+    for(i = 0; i < 4 ; i = i + 1)begin
+        for(j = 0; j < 4; j = j + 1)begin
+        preliminarysandbox[i][j] = sandbox[i][3-j]
         end
     end
 end
 
-if(state == PIECE_PLACED) begin
-    for (int i = 0; i < 30; i++) begin
-        for (int j = 0; j < 9; j++) begin
-            copy_board[i][j][0] = game_board[i][j][0] || game_board[i][j][1];
-            copy_board[i][j][1] = 1'b0
+if(  ROTATERIGHT ) begin
+/*
+1 2 3 4            13 9 5 1
+5 6 7 8             . . 6 2
+9 . . .  ------>    . . 7 3
+13. . .             . . 8 4
+*/
+    int i;
+    int j;
+    for(i = 0; i < 4 ; i = i + 1)begin
+        for(j = 0; j < 4; j = j + 1)begin
+        preliminarysandbox[i][j] = sandbox[3-i][j]
         end
     end
-    for (int i = 0; i < 30; i++) begin
-        for (int j = 0; j < 9; j++) begin
-            game_board[i][j][3:0] = copy_board[i][j][3:0]
-        end
-    end
-end
-if(state == NEW_PIECE) begin
-piece_to_place = piece_buffer[0]
-piece_buffer[0] = piece_buffer[1]
-for (int i = 0; i < 9; i++) begin
-        for (int j = 0; j < 9; j++) begin
-            copy_board[i][j][0] = game_board[i][j][0] || game_board[i][j][1];
-            copy_board[i][j][1] = 1'b0
-        end
-    end
-end
-if(rotate[0]) begin //right rotate
-//todo
 
 end
-if(rotate[1]) begin //left rotate
-//todo
+//If collision[x] == 1, then we won't collide when we try to move.
+if(  FALL ) begin
+    if(collision[0] == 1'b1)begin
+        sandboxUD = sandboxUD + 1
+    end 
+end
+
+if(  MOVELEFT ) begin
+    if(collision[1] == 1'b1)begin
+        sandboxLR = sandboxLR - 1
+    end
+end
+
+if(  MOVERIGHT ) begin
+    if(collision[2] == 1'b1)begin
+        sandboxLR = sandboxLR + 1
+    end
+end
+
+if(  KONAMI ) begin
+    if(collision[3] == 1'b1)begin
+        if(sandboxUD == 5'b00000) sandbox = 0
+        else sandboxUD = sandboxUD - 1
+    end
+end
+if(  NONEINPUT ) begin
+//not really handled here.
+//basically, if there's no input then the block should lock in faster.
+end
+
+if(  CLEARLINECHECK )begin
 
 end
-endmodule
+
+if(  CLEARLINEACT )begin
+end
+
+if(  CLEARLINE )begin
+end
+
+if(  HOLDPIECE )begin
+end
+
+if(  ENDGAME )begin
+end
+
+if(  CLEARALL )begin
+end
