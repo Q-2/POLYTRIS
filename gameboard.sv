@@ -15,7 +15,7 @@ module gameboard (
 /*
 This module controls the rotations, translations, and collisions between board pieces and the board itself.
 
-
+TODO: IMPLEMENT COLLISION LOGIC FOR TRANSLATIONS (Fall,Konami,L/R)  
 
 */
 logic [15:0]interpreted_boarddata;
@@ -27,7 +27,7 @@ for(bitpair = 0; bitpair < 32; bitpair = bitpair + 2)begin
     interpreted_boarddata[bitpair/2] = board_data[bitpair] || board_data[bitpair+1]
 end
 if( PIECEPLACED ) begin
- sandbox = piece_buffer
+    sandbox = piece_buffer
 end
 
 if( ROTATELEFT ) begin
