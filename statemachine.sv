@@ -28,32 +28,34 @@ module statemachine (
                        
 );
     enum logic [4:0]{
+        //BASE STATE
+        S_STALL
         //GAMEBOARD RELEVANT STATES
-        STATE_PIECEPLACED,
-        STATE_ROTATELEFT_1,
-        STATE_ROTATELEFT_2,
-        STATE_ROTATERIGHT,
-        STATE_ROTATERIGHT_2,
-        STATE_FALL,
-        STATE_FALL_2,
-        STATE_MOVELEFT,
-        STATE_MOVERIGHT,
-        STATE_KONAMI,
-        STATE_NONEINPUT,
-        STATE_CLEARLINECHECK,
-        STATE_CLEARLINEACT,
-        STATE_CLEARLINE,
-        STATE_HOLDPIECE,
-        STATE_HOLDPIECE_2,
-        STATE_HOLDPIECE_3,
-        STATE_ENDGAME,
-        STATE_CLEARALL,
+        S_PIECEPLACED,
+        S_ROTATELEFT_1,
+        S_ROTATELEFT_2,
+        S_ROTATERIGHT,
+        S_ROTATERIGHT_2,
+        S_FALL,
+        S_FALL_2,
+        S_MOVELEFT,
+        S_MOVERIGHT,
+        S_KONAMI,
+        S_NONEINPUT,
+        S_CLEARLINECHECK,
+        S_CLEARLINEACT,
+        S_CLEARLINE,
+        S_HOLDPIECE,
+        S_HOLDPIECE_2,
+        S_HOLDPIECE_3,
+        S_ENDGAME,
+        S_CLEARALL,
         //
         //OTHER STATES:
         //
-        STATE_PIECE_LOAD,
-        STATE_PIECE_INSERT,
-        STATE_LOGO,
+        S_PIECE_LOAD,
+        S_PIECE_INSERT,
+        S_LOGO,
     } State, Next_state
     always_ff @ (posedge Clk)
     begin
@@ -85,30 +87,56 @@ module statemachine (
         HOLDPIECE_2 = 0;
         HOLDPIECE_3 = 0;
         unique case (State)
+        //BASE STATE
+            S_STALL :
+                        //TODO
                         //GAMEBOARD RELEVANT STATES
-            STATE_PIECEPLACED : // todo all
-            STATE_ROTATELEFT_1 :
-            STATE_ROTATELEFT_2 :
-            STATE_ROTATERIGHT :
-            STATE_ROTATERIGHT_2 :
-            STATE_FALL :
-            STATE_FALL_2 :
-            STATE_MOVELEFT :
-            STATE_MOVERIGHT :
-            STATE_KONAMI :
-            STATE_NONEINPUT :
-            STATE_CLEARLINECHECK :
-            STATE_CLEARLINEACT :
-            STATE_CLEARLINE :
-            STATE_HOLDPIECE :
-            STATE_HOLDPIECE_2 :
-            STATE_HOLDPIECE_3 :
-            STATE_ENDGAME :
-            STATE_CLEARALL :
+            S_PIECEPLACED : // todo all
+                Next_state = CLEARLINECHECK
+            S_ROTATELEFT_1 :
+                Next_state = ROTATELEFT_2
+            S_ROTATELEFT_2 :
+                Next_state = S_STALL
+            S_ROTATERIGHT :
+                Next_state = ROTATERIGHT_2
+            S_ROTATERIGHT_2 :
+                Next_state = S_STALL
+            S_FALL :
+                Next_state = S_FALL_2
+            S_FALL_2 :
+                Next_state = S_STALL //todo
+            S_MOVELEFT :
+                Next_state = S_STALL
+            S_MOVERIGHT :
+                Next_state = S_STALL
+            S_KONAMI :
+                Next_state = S_STALL
+            S_NONEINPUT :
+                Next_state = S_FALL_2
+            S_CLEARLINECHECK :
+                Next_state = CLEARLINEACT
+            S_CLEARLINEACT :
+                Next_state = CLEARLINE
+            S_CLEARLINE :
+                Next_state = S_PIECE_LOAD //todo
+            S_HOLDPIECE :
+                Next_state = S_HOLDPIECE_2
+            S_HOLDPIECE_2 :
+                Next_state = S_HOLDPIECE_3
+            S_HOLDPIECE_3 : 
+                Next_state = S_STALL
+            S_ENDGAME :
+                if(keyboardinput)
+                    Next_state = S_LOGO
+            S_CLEARALL :
+                Next_state = S_ENDGAME
             //OTHER STATES :
-            STATE_PIECE_LOAD :
-            STATE_PIECE_INSERT :
-            STATE_LOGO :
+            S_PIECE_LOAD :
+                Next_state = S_PIECE_INSERT
+            S_PIECE_INSERT :
+                Next_state = S_STALL
+            S_LOGO :
+                Next_state = S_PIECE_LOAD
     end
     
 
