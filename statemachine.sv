@@ -89,54 +89,57 @@ module statemachine (
         unique case (State)
         //BASE STATE
             S_STALL :
-                        //TODO
+                        //Todo Need to add control logic for this changing when keyboard input 
                         //GAMEBOARD RELEVANT STATES
-            S_PIECEPLACED : // todo all
-                Next_state = CLEARLINECHECK
+            S_PIECEPLACED : //Todo need to write sandbox to gameboard
+                Next_state = CLEARLINECHECK;
             S_ROTATELEFT_1 :
-                Next_state = ROTATELEFT_2
+                Next_state = ROTATELEFT_2;
             S_ROTATELEFT_2 :
-                Next_state = S_STALL
+                Next_state = S_STALL;
             S_ROTATERIGHT :
-                Next_state = ROTATERIGHT_2
+                Next_state = ROTATERIGHT_2;
             S_ROTATERIGHT_2 :
-                Next_state = S_STALL
+                Next_state = S_STALL;
             S_FALL :
-                Next_state = S_FALL_2
+                Next_state = S_FALL_2;
             S_FALL_2 :
-                Next_state = S_STALL //todo
+                Next_state = S_STALL; //todo need to add ground counter logic.
             S_MOVELEFT :
-                Next_state = S_STALL
+                Next_state = S_STALL;
             S_MOVERIGHT :
-                Next_state = S_STALL
+                Next_state = S_STALL;
             S_KONAMI :
-                Next_state = S_STALL
+                Next_state = S_STALL;
             S_NONEINPUT :
-                Next_state = S_FALL_2
+                Next_state = S_FALL_2;
             S_CLEARLINECHECK :
-                Next_state = CLEARLINEACT
+                Next_state = CLEARLINEACT;
             S_CLEARLINEACT :
-                Next_state = CLEARLINE
+                Next_state = CLEARLINE;
             S_CLEARLINE :
-                Next_state = S_PIECE_LOAD //todo
+                Next_state = S_PIECE_LOAD; //todo: need to add logic for looping checks of clearlines.
             S_HOLDPIECE :
-                Next_state = S_HOLDPIECE_2
+                Next_state = S_HOLDPIECE_2;
             S_HOLDPIECE_2 :
-                Next_state = S_HOLDPIECE_3
+                Next_state = S_HOLDPIECE_3;
             S_HOLDPIECE_3 : 
-                Next_state = S_STALL
+                Next_state = S_STALL;
             S_ENDGAME :
-                if(keyboardinput)
-                    Next_state = S_LOGO
+                if(keyboardinput != 9'b000000000)
+                    Next_state = S_LOGO;
             S_CLEARALL :
-                Next_state = S_ENDGAME
+                Next_state = S_ENDGAME;
             //OTHER STATES :
             S_PIECE_LOAD :
-                Next_state = S_PIECE_INSERT
+                Next_state = S_PIECE_INSERT;
             S_PIECE_INSERT :
-                Next_state = S_STALL
+                Next_state = S_STALL;
             S_LOGO :
-                Next_state = S_PIECE_LOAD
+                if(keyboardinput)
+                    Next_state = S_PIECE_LOAD;
+            default: Next_state = S_STALL;
+        endcase
     end
     
 
