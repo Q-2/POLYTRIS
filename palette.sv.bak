@@ -4,8 +4,7 @@ module palette (
     output [11:0] COLOR_1,
     output [11:0] COLOR_2,
     output [11:0] COLOR_3
-     );
-
+);
 
 /*
 Block colors:
@@ -69,64 +68,48 @@ PIECE_REG_7[0] = 12'h74f;
 PIECE_REG_7[1] = 12'hb02;
 PIECE_REG_7[2] = 12'h000;
 PIECE_REG_7[3] = 12'hfff;
-
+end
 
 case (LEVEL)
-    3'b000: begin
-            COLOR_0 = PIECE_REG_0[0];
+    3'b000: COLOR_0 = PIECE_REG_0[0];
             COLOR_1 = PIECE_REG_0[1];
             COLOR_2 = PIECE_REG_0[2];
             COLOR_3 = PIECE_REG_0[3];
-            end
 
-    3'b001: begin
-            COLOR_0 = PIECE_REG_1[0];
+    3'b001: COLOR_0 = PIECE_REG_1[0];
             COLOR_1 = PIECE_REG_1[1];
             COLOR_2 = PIECE_REG_1[2];
             COLOR_3 = PIECE_REG_1[3];
-            end
 
-    3'b010: begin
-            COLOR_0 = PIECE_REG_2[0];
+    3'b010: COLOR_0 = PIECE_REG_2[0];
             COLOR_1 = PIECE_REG_2[1];
             COLOR_2 = PIECE_REG_2[2];
             COLOR_3 = PIECE_REG_2[3];
-            end
 
-    3'b011: begin
-            COLOR_0 = PIECE_REG_3[0];
+    3'b011: COLOR_0 = PIECE_REG_3[0];
             COLOR_1 = PIECE_REG_3[1];
             COLOR_2 = PIECE_REG_3[2];
             COLOR_3 = PIECE_REG_3[3];
-            end
 
-    3'b100: begin
-            COLOR_0 = PIECE_REG_4[0];
+    3'b100: COLOR_0 = PIECE_REG_4[0];
             COLOR_1 = PIECE_REG_4[1];
             COLOR_2 = PIECE_REG_4[2];
             COLOR_3 = PIECE_REG_4[3];
-            end
 
-    3'b101: begin
-            COLOR_0 = PIECE_REG_5[0];
+    3'b101: COLOR_0 = PIECE_REG_5[0];
             COLOR_1 = PIECE_REG_5[1];
             COLOR_2 = PIECE_REG_5[2];
             COLOR_3 = PIECE_REG_5[3];
-            end
 
-    3'b110: begin
-            COLOR_0 = PIECE_REG_6[0];
+    3'b110: COLOR_0 = PIECE_REG_6[0];
             COLOR_1 = PIECE_REG_6[1];
             COLOR_2 = PIECE_REG_6[2];
             COLOR_3 = PIECE_REG_6[3];
-            end
-
-    3'b111: begin
-            COLOR_0 = PIECE_REG_7[0];
+            
+    3'b111: COLOR_0 = PIECE_REG_7[0];
             COLOR_1 = PIECE_REG_7[1];
             COLOR_2 = PIECE_REG_7[2];
             COLOR_3 = PIECE_REG_7[3];
-            end
 endcase
-end
+
 endmodule
