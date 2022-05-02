@@ -140,6 +140,7 @@ end
 logic [5:0] SPRITE_ADDR;
 logic [31:0] SPRITE_DATA;
 logic [11:0] COLOR_0, COLOR_1, COLOR_2, COLOR_3;
+//TEST todo for sandbox display.
 
  //sandbox variables
 logic [3:0] SANDBOX [4];
@@ -154,7 +155,7 @@ logic [7:0] CHAR_DATA;
 logic [5:0] CHAR_ADDR;
 logic [4:0] VGA_ADDR;
 logic [8:0] BoardX, BoardY;
-logic [4:0] REGPOS_X, REGPOS_Y;
+logic [6:0] REGPOS_X, REGPOS_Y;
 logic [2:0] LEVEL;
 
 //TODO: test case
@@ -183,9 +184,15 @@ case (PIXEL_VAL)
 	2'b10: PIXEL_COLOR = COLOR_2; //black
 	default: PIXEL_COLOR = COLOR_3; //white
 endcase
+//TEST todo Sandbox and Gameboard Contents (local reg = gameboard)
 LOCAL_REG[0] = 32'b11111111111111111111010011011011;
 LOCAL_REG[4] = 32'b11111111111111111111010011011011;
-
+SANDBOX[0][0] = 1'b1;
+SANDBOX[1][0] = 1'b1;
+SANDBOX[0][1] = 1'b1;
+SANDBOX[3][3] = 1'b1;
+SANDBOX_X = 10;
+SANDBOX_Y = 10;
 end
 always_comb begin
 //obtain score box position
