@@ -22,37 +22,37 @@ module vga_text_avl_interface (
 	output logic hs, vs						// VGA HS/VS
 );
 logic [31:0] TEMP_WRITE_DATA;
-logic [10:0] FONT_ADDR;
-logic [7:0]  FONT_DATA;
+logic [11:0] FONT_ADDR;
+logic [15:0]  FONT_DATA;
 logic VGA_CLK;
 logic blank;
 logic sync;
-//logic [31:0] LOCAL_REG       [`NUM_REGS];
+logic [31:0] LOCAL_REG [30];
 logic [9:0] DrawX, DrawY; // Registers
 //put other local variables here
 logic write;
 logic [3:0] FGD_R, FGD_G, FGD_B, BKG_R, BKG_G, BKG_B;
-logic PIXEL_VAL;
-logic [15:0] CHAR_VAL;
+logic [1:0] PIXEL_VAL;
+logic [19:0] VGA_DATA;
 logic [3:0] LENGTH; 
 
 //Declare submodules..e.g. VGA controller, ROMS, etc
 
-OCM Zuofu (
-	.address_a(AVL_ADDR),
-	.address_b(CHARLES),
-	.byteena_a(AVL_BYTE_EN),
-	.byteena_b(),
-	.clock(CLK),
-	.data_a(AVL_WRITEDATA),
-	.data_b(),
-	.rden_a(AVL_READ),
-	.rden_b(VGA_CLK),
-	.wren_a(AVL_WRITE),
-	.wren_b(),
-	.q_a(AVL_READDATA),
-	.q_b(AGENT_Q)
-);
+// OCM Zuofu (
+// 	.address_a(AVL_ADDR),
+// 	.address_b(VGA_ADDR),
+// 	.byteena_a(AVL_BYTE_EN),
+// 	.byteena_b(),
+// 	.clock(CLK),
+// 	.data_a(AVL_WRITEDATA),
+// 	.data_b(),
+// 	.rden_a(AVL_READ),
+// 	.rden_b(VGA_CLK),
+// 	.wren_a(AVL_WRITE),
+// 	.wren_b(),
+// 	.q_a(AVL_READDATA),
+// 	.q_b(VGA_DATA)
+// );
 
 vga_controller text_writing_controller_instantiation(
 .Clk(CLK),
@@ -66,17 +66,6 @@ vga_controller text_writing_controller_instantiation(
 .DrawY(DrawY)
 );
 
-/*                   
-font_rom(
-.addr(FONT_ADDR), 
-.data(FONT_DATA)
-);
-*/
-
-logic [2:0] level;
-logic [11:0] palette [3];
-//call colors from drawing
-drawing level_colors(.*);
 
 //background colors
 logic [11:0] BGD_REG [4];
@@ -84,18 +73,16 @@ assign BGD_REG[0] = 12'h777; //gray
 assign BGD_REG[1] = 12'h000; //black
 assign BGD_REG[2] = 12'hfff; //white
 assign BGD_REG[3] = 12'h620; //red
+logic [11:0] PIXEL_COLOR;
 
-//obtain board position
-logic [8:0] BoardX, BoardY;
-logic bleh;
-always_ff @(posedge CLK) begin
+always_ff @(posedge VGA_CLK) begin
 //board
 	if ((DrawX > 240) && (DrawX < 400)) begin
-		// BoardX = DrawX - 240;
-		// BoardY = DrawY ;
-		red = 4'h0;
-		blue = 4'h0;
-		green = 4'h0;
+		if (blank) begin
+			red = PIXEL_COLOR[11:8];
+			green = PIXEL_COLOR[7:4];
+			blue = PIXEL_COLOR[3:0];
+		end
 	end
 //board borders
 	else if (((DrawX > 232) && (DrawX < 240)) || ((DrawX > 400) && (DrawX < 408))) begin
@@ -104,10 +91,17 @@ always_ff @(posedge CLK) begin
 		green = 4'hf; 
 	end
  //score box
- 	else if (((DrawX > 432) && (DrawX < 544)) && ((DrawY > 32) && (DrawY < 144))) begin
- 		red = 4'h0;
- 		blue = 4'h0;
- 		green = 4'h0;
+ 	else if (((DrawX > 432) && (DrawX < 544)) && ((DrawY > 32) && (DrawY < 128))) begin
+			if(FONT_PIXEL) begin
+				red = 4'hf;
+				blue = 4'hf;
+				green = 4'hf;
+			end
+			else begin
+				red = 4'h0;
+				blue = 4'h0;
+				green = 4'h0;
+			end
  	end
  //level box
  	else if (((DrawX > 432) && (DrawX < 528)) && ((DrawY > 304) && (DrawY < 352))) begin
@@ -133,49 +127,100 @@ always_ff @(posedge CLK) begin
 		blue = 4'hf;
 		green = 4'hf;
 	end
-	else bleh = 0;
+	else;
 //next piece box
 	if (((DrawX > 432) && (DrawX < 496)) && ((DrawY > 192) && (DrawY < 272))) begin
 		red = 4'h0;
 		blue = 4'h0;
 		green = 4'h0;
 	end
-	else bleh = 0;
+	else;
 end
-/* 
-// Read and write from AVL interface to register block, note that READ waitstate = 1, so this should be in always_ff
-always_ff @(posedge CLK) begin
-	if (AVL_WRITE) begin
-		if(AVL_BYTE_EN[0])   LOCAL_REG[AVL_ADDR][7:0] <= AVL_WRITEDATA[7:0];
-		if(AVL_BYTE_EN[1])   LOCAL_REG[AVL_ADDR][15:8] <= AVL_WRITEDATA[15:8];
-		if(AVL_BYTE_EN[2])   LOCAL_REG[AVL_ADDR][23:16] <= AVL_WRITEDATA[23:16];
-		if(AVL_BYTE_EN[3])	LOCAL_REG[AVL_ADDR][31:24] <= AVL_WRITEDATA[31:24];
-	end
-	if (AVL_READ) begin
-		AVL_READDATA[31:0] = LOCAL_REG[AVL_ADDR][31:0];
-	end
-end
-*/
 
+logic [5:0] SPRITE_ADDR;
+logic [31:0] SPRITE_DATA;
+logic [11:0] COLOR_0, COLOR_1, COLOR_2, COLOR_3;
+
+ //sandbox variables
+logic [3:0] SANDBOX [4];
+logic [4:0] SANDBOX_X;
+logic [5:0] SANDBOX_Y;
+logic [4:0] PIECE_LENGTH;
+logic [1:0] PIECE_STYLE;
+logic [7:0] ScoreX, ScoreY;
+logic FONT_PIXEL;
+logic [3:0] SCOREPOS_X, SCOREPOS_Y;
+logic [7:0] CHAR_DATA;
+logic [5:0] CHAR_ADDR;
+logic [4:0] VGA_ADDR;
+logic [8:0] BoardX, BoardY;
+logic [4:0] REGPOS_X, REGPOS_Y;
+logic [2:0] LEVEL;
+
+//TODO: test case
+assign LEVEL = 3'b000;
+
+//obtain board position
+assign BoardX = DrawX - 240;
+assign BoardY = DrawY;
+
+always_comb begin
+//reading data from a 32 bit
+PIXEL_VAL = SPRITE_DATA[(31-{BoardX[3:0],1'b0})-:2];
+SPRITE_ADDR = {VGA_DATA[(REGPOS_X*2+1)-:2], BoardY[3:0]};
+REGPOS_Y = BoardY[8:4];
+REGPOS_X = BoardX[8:4];
+PIECE_STYLE = (PIECE_LENGTH % 3) + 1;
+
+if ((REGPOS_X + 4 >= SANDBOX_X - 3 + 4) && (REGPOS_X  + 4 <= SANDBOX_X + 4) && (REGPOS_Y + 4 >= SANDBOX_Y - 3 + 4) && (REGPOS_Y + 4 <= SANDBOX_Y + 4)) begin
+	VGA_DATA = {PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE};
+end
+VGA_DATA = LOCAL_REG[REGPOS_Y][19:0];
+
+case (PIXEL_VAL)
+	2'b00: PIXEL_COLOR = COLOR_0; //accent 1
+	2'b01: PIXEL_COLOR = COLOR_1; //accent 2
+	2'b10: PIXEL_COLOR = COLOR_2; //black
+	default: PIXEL_COLOR = COLOR_3; //white
+endcase
+LOCAL_REG[0] = 32'b11111111111111111111010011011011;
+LOCAL_REG[4] = 32'b11111111111111111111010011011011;
+
+end
+always_comb begin
+//obtain score box position
+ScoreX = DrawX - 432;
+ScoreY = DrawY - 32;
+SCOREPOS_X = ScoreX[7:4];
+SCOREPOS_Y = ScoreY[7:4];
+// 	else if (((DrawX > 432) && (DrawX < 544)) && ((DrawY > 32) && (DrawY < 128))) begin
+
+//printing the 'score' on screen
+CHAR_ADDR = SCOREPOS_Y*7+SCOREPOS_X;
+FONT_ADDR = {CHAR_DATA, ScoreY[3:0]};
+FONT_PIXEL = FONT_DATA[15-ScoreX[3:0]];
+end
+
+
+// PIXEL_VAL = SPRITE_DATA[(31-{BoardX[3:0],1'b0})-:2];
+// SPRITE_ADDR = {VGA_DATA[(REGPOS_X*2+1)-:2], BoardY[3:0]};
+// REGPOS_Y = BoardY[8:4];
+// REGPOS_X = BoardX[8:4];
+// PIECE_STYLE = (PIECE_LENGTH % 3) + 1;
+
+
+drawing piece_tile(.SPRITE_ADDR(SPRITE_ADDR), .SPRITE_DATA(SPRITE_DATA));
+
+palette level_colors(.LEVEL(LEVEL), .COLOR_0(COLOR_0), .COLOR_1(COLOR_1), .COLOR_2(COLOR_2), .COLOR_3(COLOR_3)); //TODO: fill in the level
+
+score_reg print_score(.CHAR_ADDR(CHAR_ADDR), .CHAR_DATA(CHAR_DATA));
+
+font_rom(
+.FONT_ADDR(12'h124), 
+.FONT_DATA(FONT_DATA)
+);
 
 /*
-always_comb begin
-PIXEL_VAL = FONT_DATA[7-DrawX[2:0]]^CHAR_VAL[15];
-FONT_ADDR = {CHAR_VAL[14:8], DrawY[3:0]};
-REGPOS_Y = DrawY[9:4];
-REGPOS_X = DrawX[9:4];
-CHARLES = REGPOS_Y*40+REGPOS_X;
-CHAR_VAL = AGENT_Q;
-endcase
-
-
-
-//sprite retrieval  |||  row major order, position row, col -> position by (row*Ncol + col)
-//Color retrieval
-LSD_VISION = CHAR_VAL[4:3];
-
-
-
 //check if it's a piece
 FGD_ID = LSD_VISION[7:4];
 FGD_REG = FGD_ID[3:1]; //divide by two, take floor to get palette register
@@ -192,11 +237,12 @@ BKG_ID = LSD_VISION[3:0];
 BKG_REG = BKG_ID[3:1]; //divide by two, take floor to get palette register
 if (BKG_ID[0]==0)
 	BKG_LSD_COLOR = PALLET_REG[BKG_REG][12:1];
-else 
+else begin
 	BKG_LSD_COLOR = PALLET_REG[BKG_REG][24:13];
-BKG_R = BKG_LSD_COLOR[3:0];
-BKG_G = BKG_LSD_COLOR[7:4];
-BKG_B = BKG_LSD_COLOR[11:8];
+	BKG_R = BKG_LSD_COLOR[3:0];
+	BKG_G = BKG_LSD_COLOR[7:4];
+	BKG_B = BKG_LSD_COLOR[11:8];
+	end
 end
 
 always_ff @(posedge VGA_CLK) begin

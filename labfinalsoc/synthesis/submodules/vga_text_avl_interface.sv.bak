@@ -1,0 +1,271 @@
+
+module vga_text_avl_interface (
+	// Avalon Clock Input, note this clock is also used for VGA, so this must be 50Mhz
+	// We can put a clock divider here in the future to make this IP more generalizable
+	input logic CLK,           //x
+	
+	// Avalon Reset Input
+	input logic RESET,           //x
+	
+	// Avalon-MM Slave Signals
+	input  logic AVL_READ,					// Avalon-MM Read                 x
+	input  logic AVL_WRITE,					// Avalon-MM Write           x
+	input  logic AVL_CS,					// Avalon-MM Chip Select           x
+	
+	input  logic [3:0] AVL_BYTE_EN,			// Avalon-MM Byte Enable           u
+	input  logic [11:0] AVL_ADDR,			   // Avalon-MM Address           u
+	input  logic [31:0] AVL_WRITEDATA,		// Avalon-MM Write Data           x
+	output logic [31:0] AVL_READDATA,		// Avalon-MM Read Data           x
+	
+	// Exported Conduit (mapped to VGA port - make sure you export in Platform Designer)
+	output logic [3:0]  red, green, blue,	// VGA color channels (mapped to output pins in top-level)
+	output logic hs, vs						// VGA HS/VS
+);
+logic [31:0] TEMP_WRITE_DATA;
+logic [7:0] FONT_ADDR;
+logic [15:0]  FONT_DATA;
+logic VGA_CLK;
+logic blank;
+logic sync;
+logic [31:0] LOCAL_REG [30];
+logic [9:0] DrawX, DrawY; // Registers
+//put other local variables here
+logic write;
+logic [3:0] FGD_R, FGD_G, FGD_B, BKG_R, BKG_G, BKG_B;
+logic [1:0] PIXEL_VAL;
+logic [19:0] VGA_DATA;
+logic [3:0] LENGTH; 
+
+//Declare submodules..e.g. VGA controller, ROMS, etc
+
+// OCM Zuofu (
+// 	.address_a(AVL_ADDR),
+// 	.address_b(VGA_ADDR),
+// 	.byteena_a(AVL_BYTE_EN),
+// 	.byteena_b(),
+// 	.clock(CLK),
+// 	.data_a(AVL_WRITEDATA),
+// 	.data_b(),
+// 	.rden_a(AVL_READ),
+// 	.rden_b(VGA_CLK),
+// 	.wren_a(AVL_WRITE),
+// 	.wren_b(),
+// 	.q_a(AVL_READDATA),
+// 	.q_b(VGA_DATA)
+// );
+
+vga_controller text_writing_controller_instantiation(
+.Clk(CLK),
+.Reset(RESET),
+.hs(hs),
+.vs(vs),
+.pixel_clk(VGA_CLK),
+.blank(blank),
+.sync(sync),
+.DrawX(DrawX),
+.DrawY(DrawY)
+);
+
+//background colors
+logic [11:0] BGD_REG [4];
+assign BGD_REG[0] = 12'h777; //gray
+assign BGD_REG[1] = 12'h000; //black
+assign BGD_REG[2] = 12'hfff; //white
+assign BGD_REG[3] = 12'h620; //red
+logic [11:0] PIXEL_COLOR;
+
+always_ff @(posedge VGA_CLK) begin
+//board
+	if ((DrawX > 240) && (DrawX < 400)) begin
+		if (blank) begin
+			red = PIXEL_COLOR[3:0];
+			green = PIXEL_COLOR[7:4];
+			blue = PIXEL_COLOR[11:8];
+		end
+		else begin
+			red = 4'b0000;
+			green = 4'b0000;
+			blue = 4'b0000;
+		end
+	end
+//board borders
+	else if (((DrawX > 232) && (DrawX < 240)) || ((DrawX > 400) && (DrawX < 408))) begin
+		red = 4'hc;
+		blue = 4'hf;
+		green = 4'hf; 
+	end
+ //score box
+ 	else if (((DrawX > 432) && (DrawX < 544)) && ((DrawY > 32) && (DrawY < 128))) begin
+		if(blank) begin 
+			if(FONT_PIXEL) begin
+				red = 4'hf;
+				blue = 4'hf;
+				green = 4'hf;
+			end
+			else begin
+				red = 4'h0;
+				blue = 4'h0;
+				green = 4'h0;
+			end
+		end
+ 		red = 4'h0;
+ 		blue = 4'h0;
+ 		green = 4'h0;
+ 	end
+ //level box
+ 	else if (((DrawX > 432) && (DrawX < 528)) && ((DrawY > 304) && (DrawY < 352))) begin
+ 		red = 4'h0;
+ 		blue = 4'h0;
+ 		green = 4'h0;
+ 	end
+ //stats box
+ 	else if (((DrawX > 62) && (DrawX < 192)) && ((DrawY > 128) && (DrawY < 432))) begin
+ 		red = 4'h0;
+ 		blue = 4'h0;
+ 		green = 4'h0;
+ 	end
+//the rest of the background
+	else begin
+		red = 4'ha;
+		blue = 4'ha;
+		green = 4'ha;
+	end
+//next piece border
+	if (((DrawX > 424) && (DrawX < 504)) && ((DrawY > 184) && (DrawY < 280))) begin
+		red = 4'hc;
+		blue = 4'hf;
+		green = 4'hf;
+	end
+	else;
+//next piece box
+	if (((DrawX > 432) && (DrawX < 496)) && ((DrawY > 192) && (DrawY < 272))) begin
+		red = 4'h0;
+		blue = 4'h0;
+		green = 4'h0;
+	end
+	else;
+end
+
+logic [5:0] SPRITE_ADDR;
+logic [31:0] SPRITE_DATA;
+logic [11:0] COLOR_0, COLOR_1, COLOR_2, COLOR_3;
+logic [5:0] REGPOS_X, REGPOS_Y;
+
+ //sandbox variables
+logic [3:0] SANDBOX [4];
+logic [4:0] SANDBOX_X;
+logic [5:0] SANDBOX_Y;
+logic [4:0] PIECE_LENGTH;
+logic [1:0] PIECE_STYLE;
+
+always_comb begin
+//obtain board position
+logic [8:0] BoardX, BoardY;
+
+if ((REGPOS_X + 4 >= SANDBOX_X - 3 + 4) && (REGPOS_X  + 4 <= SANDBOX_X + 4) && (REGPOS_Y + 4 >= SANDBOX_Y - 3 + 4) && (REGPOS_Y + 4 <= SANDBOX_Y + 4)) begin
+	PIECE_STYLE = (PIECE_LENGTH % 3) + 1;
+	VGA_DATA = {PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE};
+end
+else VGA_DATA = LOCAL_REG[VGA_ADDR][19:0];
+
+drawing piece_tile(.SPRITE_ADDR(SPRITE_ADDR), .SPRITE_DATA(SPRITE_DATA));	//TODO: fill in the level
+palette level_colors(.LEVEL(), .COLOR_0(COLOR_0), .COLOR_1(COLOR_1), .COLOR_2(COLOR_2), .COLOR_3(COLOR_3)); //TODO: fill in the level
+
+case (PIXEL_VAL)
+	2'b00: PIXEL_COLOR = COLOR_0;
+	2'b01: PIXEL_COLOR = COLOR_1;
+	2'b10: PIXEL_COLOR = COLOR_2;
+	2'b11: PIXEL_COLOR = COLOR_3;
+endcase
+
+
+//obtain score box position
+logic [7:0] ScoreX, ScoreY;
+ScoreX = DrawX - 448;
+ScoreY = DrawY - 48;
+SCOREPOS_X = ScoreX[8:4];
+SCOREPOS_Y = ScoreY[8:4];
+//printing the 'score' on screen
+logic [7:0] SCORE_REG [20]; //TODO: get the actual score to display
+SCORE_REG[0] = 8'h26;
+SCORE_REG[1] = 8'h18;
+SCORE_REG[2] = 8'h22;
+SCORE_REG[3] = 8'h24;
+SCORE_REG[4] = 8'h1a;
+SCORE_REG[5] = 8'h27;
+SCORE_REG[6] = 8'h19;
+SCORE_REG[7] = 8'h23;
+SCORE_REG[8] = 8'h25;
+SCORE_REG[9] = 8'h1b;
+SCORE_REG[10] = 8'h1e;
+SCORE_REG[11] = 8'h22;
+SCORE_REG[12] = 8'h26;
+SCORE_REG[13] = 8'h1a;
+SCORE_REG[14] = 8'h24;
+SCORE_REG[15] = 8'h1f;
+SCORE_REG[16] = 8'h23;
+SCORE_REG[17] = 8'h27;
+SCORE_REG[18] = 8'h1b;
+SCORE_REG[19] = 8'h25;
+
+logic [7:0] FONT_VAL;
+logic FONT_PIXEL;
+FONT_VAL = SCORE_REG[SCOREPOS_Y*5+SCOREPOS_X];
+FONT_ADDR = {FONT_VAL[SCOREPOS_X[3:0]], SCOREPOS_Y[3:0]};
+FONT_PIXEL = FONT_DATA[15-ScoreX[3:0]];
+
+font_rom(
+.addr(FONT_ADDR), 
+.data(FONT_DATA)
+);
+end
+
+/*
+//check if it's a piece
+FGD_ID = LSD_VISION[7:4];
+FGD_REG = FGD_ID[3:1]; //divide by two, take floor to get palette register
+if (FGD_ID[0]==0)
+	FGD_LSD_COLOR = PALLET_REG[FGD_REG][12:1];
+else 
+	FGD_LSD_COLOR = PALLET_REG[FGD_REG][24:13];
+FGD_R = FGD_LSD_COLOR[3:0];
+FGD_G = FGD_LSD_COLOR[7:4];
+FGD_B = FGD_LSD_COLOR[11:8];
+
+//bkg color
+BKG_ID = LSD_VISION[3:0];
+BKG_REG = BKG_ID[3:1]; //divide by two, take floor to get palette register
+if (BKG_ID[0]==0)
+	BKG_LSD_COLOR = PALLET_REG[BKG_REG][12:1];
+else begin
+	BKG_LSD_COLOR = PALLET_REG[BKG_REG][24:13];
+	BKG_R = BKG_LSD_COLOR[3:0];
+	BKG_G = BKG_LSD_COLOR[7:4];
+	BKG_B = BKG_LSD_COLOR[11:8];
+	end
+end
+
+always_ff @(posedge VGA_CLK) begin
+//handle drawing (may either be combinational or sequential - or both).
+	//reading FGD_R, FGD_G, FGD_B, BKG_R, BKG_G, BKG_B values
+		if(blank) begin 
+			if(PIXEL_VAL) begin
+				red = FGD_R;
+				blue = FGD_B;
+				green = FGD_G;
+			end
+			else begin
+				red = BKG_R;
+				blue = BKG_B;
+				green = BKG_G;
+			end
+		end
+		else begin
+			red = 4'b0000;
+			green = 4'b0000;
+			blue = 4'b0000;
+		end
+end
+*/
+	
+endmodule
