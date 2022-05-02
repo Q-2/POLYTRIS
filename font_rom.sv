@@ -1,13 +1,13 @@
-module font_rom ( input [7:0]	addr,
-		  output [15:0]	data
+module font_rom ( input [11:0]	FONT_ADDR,
+		  output [15:0]	FONT_DATA
 		);
 
-	parameter ADDR_WIDTH = 8;
-   parameter DATA_WIDTH =  16;
+	parameter ADDR_WIDTH = 12;
+        parameter DATA_WIDTH =  16;
 	logic [ADDR_WIDTH-1:0] addr_reg;
 				
 	// ROM definition				
-	parameter [0:2**ADDR_WIDTH-11][DATA_WIDTH-1:0] ROM = {
+	parameter [0:2**ADDR_WIDTH-1][DATA_WIDTH-1:0] ROM = {
         // code x00
         16'b0000000000000000, // 00
         16'b0000000000000000, // 01
@@ -793,6 +793,6 @@ module font_rom ( input [7:0]	addr,
 
         };
 
-	assign data = ROM[addr];
+	assign FONT_DATA = ROM[FONT_ADDR];
 
 endmodule  

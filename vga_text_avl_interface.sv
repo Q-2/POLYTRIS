@@ -22,7 +22,7 @@ module vga_text_avl_interface (
 	output logic hs, vs						// VGA HS/VS
 );
 logic [31:0] TEMP_WRITE_DATA;
-logic [7:0] FONT_ADDR;
+logic [11:0] FONT_ADDR;
 logic [15:0]  FONT_DATA;
 logic VGA_CLK;
 logic blank;
@@ -148,10 +148,10 @@ logic [5:0] SANDBOX_Y;
 logic [4:0] PIECE_LENGTH;
 logic [1:0] PIECE_STYLE;
 logic [7:0] ScoreX, ScoreY;
-logic [7:0] SCORE_REG [20]; //TODO: get the actual score to display
-logic [7:0] FONT_VAL;
 logic FONT_PIXEL;
 logic [3:0] SCOREPOS_X, SCOREPOS_Y;
+logic [7:0] CHAR_DATA;
+logic [5:0] CHAR_ADDR;
 logic [4:0] VGA_ADDR;
 logic [8:0] BoardX, BoardY;
 logic [4:0] REGPOS_X, REGPOS_Y;
@@ -166,17 +166,16 @@ assign BoardY = DrawY;
 
 always_comb begin
 //reading data from a 32 bit
-PIXEL_VAL = SPRITE_DATA[(16-BoardX[3:0])-:2];
-SPRITE_ADDR = {VGA_DATA[(REGPOS_X[3:0]*2+1)-:2], REGPOS_Y[3:0]};
+PIXEL_VAL = SPRITE_DATA[(31-{BoardX[3:0],1'b0})-:2];
+SPRITE_ADDR = {VGA_DATA[(REGPOS_X*2+1)-:2], BoardY[3:0]};
 REGPOS_Y = BoardY[8:4];
 REGPOS_X = BoardX[8:4];
-VGA_ADDR = REGPOS_Y;
 PIECE_STYLE = (PIECE_LENGTH % 3) + 1;
 
 if ((REGPOS_X + 4 >= SANDBOX_X - 3 + 4) && (REGPOS_X  + 4 <= SANDBOX_X + 4) && (REGPOS_Y + 4 >= SANDBOX_Y - 3 + 4) && (REGPOS_Y + 4 <= SANDBOX_Y + 4)) begin
 	VGA_DATA = {PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE};
 end
-else VGA_DATA = LOCAL_REG[VGA_ADDR][19:0];
+VGA_DATA = LOCAL_REG[REGPOS_Y][19:0];
 
 case (PIXEL_VAL)
 	2'b00: PIXEL_COLOR = COLOR_0; //accent 1
@@ -184,49 +183,41 @@ case (PIXEL_VAL)
 	2'b10: PIXEL_COLOR = COLOR_2; //black
 	default: PIXEL_COLOR = COLOR_3; //white
 endcase
-LOCAL_REG[0][1:0] = 2'b01;
+LOCAL_REG[0] = 32'b11111111111111111111010011011011;
+LOCAL_REG[4] = 32'b11111111111111111111010011011011;
+
 end
 always_comb begin
 //obtain score box position
-ScoreX = DrawX - 448;
-ScoreY = DrawY - 48;
+ScoreX = DrawX - 432;
+ScoreY = DrawY - 32;
 SCOREPOS_X = ScoreX[7:4];
 SCOREPOS_Y = ScoreY[7:4];
+// 	else if (((DrawX > 432) && (DrawX < 544)) && ((DrawY > 32) && (DrawY < 128))) begin
+
 //printing the 'score' on screen
-SCORE_REG[0] = 8'h26;
-SCORE_REG[1] = 8'h18;
-SCORE_REG[2] = 8'h22;
-SCORE_REG[3] = 8'h24;
-SCORE_REG[4] = 8'h1a;
-SCORE_REG[5] = 8'h27;
-SCORE_REG[6] = 8'h19;
-SCORE_REG[7] = 8'h23;
-SCORE_REG[8] = 8'h25;
-SCORE_REG[9] = 8'h1b;
-SCORE_REG[10] = 8'h1e;
-SCORE_REG[11] = 8'h22;
-SCORE_REG[12] = 8'h26;
-SCORE_REG[13] = 8'h1a;
-SCORE_REG[14] = 8'h24;
-SCORE_REG[15] = 8'h1f;
-SCORE_REG[16] = 8'h23;
-SCORE_REG[17] = 8'h27;
-SCORE_REG[18] = 8'h1b;
-SCORE_REG[19] = 8'h25;
-
-
-FONT_VAL = SCORE_REG[SCOREPOS_Y*5+SCOREPOS_X];
-FONT_ADDR = {FONT_VAL[SCOREPOS_X[3:0]], SCOREPOS_Y[3:0]};
+CHAR_ADDR = SCOREPOS_Y*7+SCOREPOS_X;
+FONT_ADDR = {CHAR_DATA, ScoreY[3:0]};
 FONT_PIXEL = FONT_DATA[15-ScoreX[3:0]];
 end
+
+
+// PIXEL_VAL = SPRITE_DATA[(31-{BoardX[3:0],1'b0})-:2];
+// SPRITE_ADDR = {VGA_DATA[(REGPOS_X*2+1)-:2], BoardY[3:0]};
+// REGPOS_Y = BoardY[8:4];
+// REGPOS_X = BoardX[8:4];
+// PIECE_STYLE = (PIECE_LENGTH % 3) + 1;
+
 
 drawing piece_tile(.SPRITE_ADDR(SPRITE_ADDR), .SPRITE_DATA(SPRITE_DATA));
 
 palette level_colors(.LEVEL(LEVEL), .COLOR_0(COLOR_0), .COLOR_1(COLOR_1), .COLOR_2(COLOR_2), .COLOR_3(COLOR_3)); //TODO: fill in the level
 
+score_reg print_score(.CHAR_ADDR(CHAR_ADDR), .CHAR_DATA(CHAR_DATA));
+
 font_rom(
-.addr(FONT_ADDR), 
-.data(FONT_DATA)
+.FONT_ADDR(12'h124), 
+.FONT_DATA(FONT_DATA)
 );
 
 /*
