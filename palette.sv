@@ -30,13 +30,13 @@ logic [11:0] PIECE_REG_6 [4];
 logic [11:0] PIECE_REG_7 [4];
 
 always_comb begin
-PIECE_REG_0[0] = 12'h4cf;
+PIECE_REG_0[0] = 12'h5df;
 PIECE_REG_0[1] = 12'h06f;
 PIECE_REG_0[2] = 12'h000;
 PIECE_REG_0[3] = 12'hfff;
 
-PIECE_REG_1[0] = 12'h8d0;
-PIECE_REG_1[1] = 12'h0a0;
+PIECE_REG_1[0] = 12'haf0;
+PIECE_REG_1[1] = 12'h8d0;
 PIECE_REG_1[2] = 12'h000;
 PIECE_REG_1[3] = 12'hfff;
 

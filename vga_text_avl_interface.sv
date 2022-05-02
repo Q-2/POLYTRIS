@@ -66,13 +66,84 @@ vga_controller text_writing_controller_instantiation(
 .DrawY(DrawY)
 );
 
+//state machine variables
+logic [1:0] rotate;
+logic       clearline;
+logic [7:0] keyboardinput;
+logic       pieceplaced;
+logic       placepiece;
+logic       ground_notif;
+logic [5:0] clearlineval;
+logic       piece_clk;
+logic   SIG_FALL, //TODO: ADD SIGNALS TO GAMEBOARD
+		SIG_MOVELEFT,
+		SIG_MOVERIGHT,
+		SIG_KONAMI,
+		SIG_NONEINPUT,
+		SIG_CLEARLINECHECK,
+		SIG_CLEARLINEACT,
+		SIG_CLEARLINE,
+		SIG_PIECEPLACED,
+		SIG_ROTATELEFT,
+		SIG_ROTATELEFT_2,
+		SIG_ROTATERIGHT,
+		SIG_ROTATERIGHT_2,
+		SIG_HOLDPIECE,
+		SIG_HOLDPIECE_2,
+		SIG_HOLDPIECE_3,
+		SIG_CLEARALL,
+		SIG_LOGO;
+
+statemachine game_states(.*);
+
+//game board variables
+logic [3:0]piece_buffer[3:0];
+logic [10:0] RAM_ROW_ADDR;
+logic RAM_WE, RAM_RE;
+logic RAM_WRITEDATA;
+logic [3:0]collision;
+logic [3:0]sandboxLR;
+logic [4:0]sandboxUD;
+logic [3:0]sandbox[3:0];
+
+gameboard game_board(.*, 
+		.board_data(LOCAL_REG),
+		.ROTATELEFT(SIG_ROTATELEFT),
+		.ROTATELEFT_2(SIG_ROTATELEFT_2),
+		.ROTATERIGHT(SIG_ROTATERIGHT),
+		.ROTATERIGHT_2(SIG_ROTATERIGHT_2),
+		.FALL(SIG_FALL),
+		.MOVELEFT(SIG_MOVELEFT),
+		.MOVERIGHT(SIG_MOVERIGHT),
+		.PIECEPLACED(SIG_PIECEPLACED),
+		.CLEARLINECHECK(SIG_CLEARLINECHECK),
+		.CLEARLINEACT(SIG_CLEARLINEACT),
+		.CLEARLINE(SIG_CLEARLINE),
+		.KONAMI(SIG_KONAMI),
+		.NONEINPUT(SIG_NONEINPUT),
+		.HOLDPIECE(SIG_HOLDPIECE),
+		.HOLDPIECE_2(SIG_HOLDPIECE_2),
+		.HOLDPIECE_3(SIG_HOLDPIECE_3),
+		.ENDGAME(SIG_ENDGAME),
+		.CLEARALL(SIG_CLEARALL),
+		.LOGO(SIG_LOGO)
+		);
+
+//clock for falling pieces
+logic drop;
+clk_two_electric_boogaloo game_clock(
+	.CLK(CLK),
+	.RESET(RESET),
+	.drop(drop),
+	.level(LEVEL),
+	.piece_clk(piece_clk)
+);
 
 //background colors
-logic [11:0] BGD_REG [4];
-assign BGD_REG[0] = 12'h777; //gray
-assign BGD_REG[1] = 12'h000; //black
-assign BGD_REG[2] = 12'hfff; //white
-assign BGD_REG[3] = 12'h620; //red
+// assign BGD_REG[0] = 12'h777; //gray
+// assign BGD_REG[1] = 12'h000; //black
+// assign BGD_REG[2] = 12'hfff; //white
+// assign BGD_REG[3] = 12'h620; //red
 logic [11:0] PIXEL_COLOR;
 
 always_ff @(posedge VGA_CLK) begin
@@ -140,7 +211,6 @@ end
 logic [5:0] SPRITE_ADDR;
 logic [31:0] SPRITE_DATA;
 logic [11:0] COLOR_0, COLOR_1, COLOR_2, COLOR_3;
-//TEST todo for sandbox display.
 
  //sandbox variables
 logic [3:0] SANDBOX [4];
@@ -155,11 +225,10 @@ logic [7:0] CHAR_DATA;
 logic [5:0] CHAR_ADDR;
 logic [4:0] VGA_ADDR;
 logic [8:0] BoardX, BoardY;
-logic [6:0] REGPOS_X, REGPOS_Y;
+logic [4:0] REGPOS_X, REGPOS_Y;
 logic [2:0] LEVEL;
-
 //TODO: test case
-assign LEVEL = 3'b000;
+assign LEVEL = 3'b001;
 
 //obtain board position
 assign BoardX = DrawX - 240;
@@ -167,22 +236,23 @@ assign BoardY = DrawY;
 
 always_comb begin
 //reading data from a 32 bit
-PIXEL_VAL = SPRITE_DATA[(31-{BoardX[3:0],1'b0})-:2];
-SPRITE_ADDR = {VGA_DATA[(REGPOS_X*2+1)-:2], BoardY[3:0]};
-REGPOS_Y = BoardY[8:4];
-REGPOS_X = BoardX[8:4];
-PIECE_STYLE = (PIECE_LENGTH % 3) + 1;
+    PIXEL_VAL = SPRITE_DATA[(31-{BoardX[3:0],1'b0})-:2];
+    SPRITE_ADDR = {VGA_DATA[(REGPOS_X*2+1)-:2], BoardY[3:0]};
+    REGPOS_Y = BoardY[8:4];
+    REGPOS_X = BoardX[8:4];
+    PIECE_STYLE = ((PIECE_LENGTH % 3) + 1)&SANDBOX[REGPOS_X - SANDBOX_X][REGPOS_Y - SANDBOX_Y];
 
-if ((REGPOS_X + 4 >= SANDBOX_X - 3 + 4) && (REGPOS_X  + 4 <= SANDBOX_X + 4) && (REGPOS_Y + 4 >= SANDBOX_Y - 3 + 4) && (REGPOS_Y + 4 <= SANDBOX_Y + 4)) begin
-	VGA_DATA = {PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE};
+if ((REGPOS_X + 4>= SANDBOX_X ) && (REGPOS_X  <= SANDBOX_X - 1) && (REGPOS_Y + 4 >= SANDBOX_Y) && (REGPOS_Y <= SANDBOX_Y - 1)) begin
+    VGA_DATA = {PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE};;
 end
-VGA_DATA = LOCAL_REG[REGPOS_Y][19:0];
-
+else begin
+    VGA_DATA = LOCAL_REG[REGPOS_Y][19:0];
+end
 case (PIXEL_VAL)
-	2'b00: PIXEL_COLOR = COLOR_0; //accent 1
-	2'b01: PIXEL_COLOR = COLOR_1; //accent 2
-	2'b10: PIXEL_COLOR = COLOR_2; //black
-	default: PIXEL_COLOR = COLOR_3; //white
+    2'b00: PIXEL_COLOR = COLOR_0; //accent 1
+    2'b01: PIXEL_COLOR = COLOR_1; //accent 2
+    2'b10: PIXEL_COLOR = COLOR_2; //black
+    default: PIXEL_COLOR = COLOR_3; //white
 endcase
 //TEST todo Sandbox and Gameboard Contents (local reg = gameboard)
 LOCAL_REG[0] = 32'b11111111111111111111010011011011;
@@ -216,16 +286,13 @@ end
 // PIECE_STYLE = (PIECE_LENGTH % 3) + 1;
 
 
-drawing piece_tile(.SPRITE_ADDR(SPRITE_ADDR), .SPRITE_DATA(SPRITE_DATA));
+drawing(.SPRITE_ADDR(SPRITE_ADDR), .SPRITE_DATA(SPRITE_DATA));
 
 palette level_colors(.LEVEL(LEVEL), .COLOR_0(COLOR_0), .COLOR_1(COLOR_1), .COLOR_2(COLOR_2), .COLOR_3(COLOR_3)); //TODO: fill in the level
 
-score_reg print_score(.CHAR_ADDR(CHAR_ADDR), .CHAR_DATA(CHAR_DATA));
+score_reg char_code(.CHAR_ADDR(CHAR_ADDR), .CHAR_DATA(CHAR_DATA));
 
-font_rom(
-.FONT_ADDR(12'h124), 
-.FONT_DATA(FONT_DATA)
-);
+font_rom(.FONT_ADDR(FONT_ADDR), .FONT_DATA(FONT_DATA));
 
 /*
 //check if it's a piece
