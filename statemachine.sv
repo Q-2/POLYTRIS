@@ -1,12 +1,12 @@
 module statemachine (
     input  logic [1:0] rotate,
     input  logic       clearline,
-    input  logic [8:0] keyboardinput,
+    input  logic [7:0] keyboardinput,
     input  logic       pieceplaced,
     input  logic       placepiece,
-    input  logic       pogchamp,
     input  logic       ground_notif,
     input  logic [5:0] clearlineval,
+    input  logic       piece_clk,
 
     output logic       FALL,
                        MOVELEFT,
@@ -27,11 +27,20 @@ module statemachine (
                        
                        
 );
+    always_ff @ (posedge piece_clk) begin
+        piececlkreg = 1'b1
+    end
+
+    logic       piececlkreg
+    logic [3:0] keyreg;
     enum logic [4:0]{
         //BASE STATE
         S_STALL
         //GAMEBOARD RELEVANT STATES
         S_PIECEPLACED,
+        S_PIECEPLACED_1,
+        S_PIECEPLACED_2,
+        S_PIECEPLACED_3,
         S_ROTATELEFT_1,
         S_ROTATELEFT_2,
         S_ROTATERIGHT,
@@ -74,7 +83,7 @@ module statemachine (
         MOVELEFT = 0;
         MOVERIGHT = 0;
         KONAMI = 0;
-        NONEINPU = 0;
+        NONEINPUT = 0;
         CLEARLINECHECK = 0;
         CLEARLINEACT = 0;
         CLEARLINE = 0;
@@ -87,10 +96,29 @@ module statemachine (
         HOLDPIECE_2 = 0;
         HOLDPIECE_3 = 0;
         unique case (State)
-        //BASE STATE
+            //BASE STATE
             S_STALL :
-                        //Todo Need to add control logic for this changing when keyboard input 
-                        //GAMEBOARD RELEVANT STATES
+                if(keycode == KONAMI_KEYCODE)begin
+                Next_state = KONAMI
+                end
+                else if(piececlkreg) begin
+                Next_state = FALL
+                piececlkreg = 0
+                end
+                else if(keycode == LEFT_KEYCODE)begin
+                Next_state = MOVELEFT
+                end
+                else if(keycode == RIGHT_KEYCODE)begin
+                Next_state = MOVERIGHT
+                end
+                else if(keycode == LEFT_ROTATE_KEYCODE)begin
+                Next_state = ROTATELEFT
+                end
+                else if(keycode == RIGHT_ROTATE_KEYCODE)begin
+                Next_state = ROTATERIGHT
+                end
+                else Next_state = NONEINPUT
+
             S_PIECEPLACED : //Todo need to write sandbox to gameboard
                 Next_state = CLEARLINECHECK;
             S_ROTATELEFT_1 :
@@ -131,7 +159,7 @@ module statemachine (
             S_CLEARALL :
                 Next_state = S_ENDGAME;
             //OTHER STATES :
-            S_PIECE_LOAD :
+            S_PIECE_LOAD : 
                 Next_state = S_PIECE_INSERT;
             S_PIECE_INSERT :
                 Next_state = S_STALL;
