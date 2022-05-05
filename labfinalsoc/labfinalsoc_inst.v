@@ -1,10 +1,13 @@
 	labfinalsoc u0 (
 		.clk_clk                        (<connected-to-clk_clk>),                        //                     clk.clk
+		.generation_export_export       (<connected-to-generation_export_export>),       //       generation_export.export
 		.hex_digits_export              (<connected-to-hex_digits_export>),              //              hex_digits.export
 		.key_external_connection_export (<connected-to-key_external_connection_export>), // key_external_connection.export
+		.keyboard_input_new_signal      (<connected-to-keyboard_input_new_signal>),      //          keyboard_input.new_signal
 		.keycode_export                 (<connected-to-keycode_export>),                 //                 keycode.export
 		.leds_export                    (<connected-to-leds_export>),                    //                    leds.export
 		.reset_reset_n                  (<connected-to-reset_reset_n>),                  //                   reset.reset_n
+		.sdram_clk_clk                  (<connected-to-sdram_clk_clk>),                  //               sdram_clk.clk
 		.sdram_wire_addr                (<connected-to-sdram_wire_addr>),                //              sdram_wire.addr
 		.sdram_wire_ba                  (<connected-to-sdram_wire_ba>),                  //                        .ba
 		.sdram_wire_cas_n               (<connected-to-sdram_wire_cas_n>),               //                        .cas_n
@@ -26,6 +29,10 @@
 		.vga_port_red                   (<connected-to-vga_port_red>),                   //                        .red
 		.vga_port_hs                    (<connected-to-vga_port_hs>),                    //                        .hs
 		.vga_port_vs                    (<connected-to-vga_port_vs>),                    //                        .vs
-		.sdram_clk_clk                  (<connected-to-sdram_clk_clk>)                   //               sdram_clk.clk
+		.generator_flag_new_signal      (<connected-to-generator_flag_new_signal>),      //          generator_flag.new_signal
+		.game_piece_new_signal          (<connected-to-game_piece_new_signal>),          //              game_piece.new_signal
+		.random_noise_new_signal        (<connected-to-random_noise_new_signal>),        //            random_noise.new_signal
+		.piece_export_export            (<connected-to-piece_export_export>),            //            piece_export.export
+		.noise_export_export            (<connected-to-noise_export_export>)             //            noise_export.export
 	);
 

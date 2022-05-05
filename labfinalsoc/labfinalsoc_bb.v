@@ -1,11 +1,14 @@
 
 module labfinalsoc (
 	clk_clk,
+	generation_export_export,
 	hex_digits_export,
 	key_external_connection_export,
+	keyboard_input_new_signal,
 	keycode_export,
 	leds_export,
 	reset_reset_n,
+	sdram_clk_clk,
 	sdram_wire_addr,
 	sdram_wire_ba,
 	sdram_wire_cas_n,
@@ -27,14 +30,21 @@ module labfinalsoc (
 	vga_port_red,
 	vga_port_hs,
 	vga_port_vs,
-	sdram_clk_clk);	
+	generator_flag_new_signal,
+	game_piece_new_signal,
+	random_noise_new_signal,
+	piece_export_export,
+	noise_export_export);	
 
 	input		clk_clk;
+	input	[7:0]	generation_export_export;
 	output	[15:0]	hex_digits_export;
 	input	[1:0]	key_external_connection_export;
+	input	[7:0]	keyboard_input_new_signal;
 	output	[7:0]	keycode_export;
 	output	[13:0]	leds_export;
 	input		reset_reset_n;
+	output		sdram_clk_clk;
 	output	[12:0]	sdram_wire_addr;
 	output	[1:0]	sdram_wire_ba;
 	output		sdram_wire_cas_n;
@@ -56,5 +66,9 @@ module labfinalsoc (
 	output	[3:0]	vga_port_red;
 	output		vga_port_hs;
 	output		vga_port_vs;
-	output		sdram_clk_clk;
+	output	[7:0]	generator_flag_new_signal;
+	input	[15:0]	game_piece_new_signal;
+	input	[15:0]	random_noise_new_signal;
+	output	[15:0]	piece_export_export;
+	output	[15:0]	noise_export_export;
 endmodule

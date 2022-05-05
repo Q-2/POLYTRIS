@@ -1,11 +1,14 @@
 	component labfinalsoc is
 		port (
 			clk_clk                        : in    std_logic                     := 'X';             -- clk
+			generation_export_export       : in    std_logic_vector(7 downto 0)  := (others => 'X'); -- export
 			hex_digits_export              : out   std_logic_vector(15 downto 0);                    -- export
 			key_external_connection_export : in    std_logic_vector(1 downto 0)  := (others => 'X'); -- export
+			keyboard_input_new_signal      : in    std_logic_vector(7 downto 0)  := (others => 'X'); -- new_signal
 			keycode_export                 : out   std_logic_vector(7 downto 0);                     -- export
 			leds_export                    : out   std_logic_vector(13 downto 0);                    -- export
 			reset_reset_n                  : in    std_logic                     := 'X';             -- reset_n
+			sdram_clk_clk                  : out   std_logic;                                        -- clk
 			sdram_wire_addr                : out   std_logic_vector(12 downto 0);                    -- addr
 			sdram_wire_ba                  : out   std_logic_vector(1 downto 0);                     -- ba
 			sdram_wire_cas_n               : out   std_logic;                                        -- cas_n
@@ -27,18 +30,25 @@
 			vga_port_red                   : out   std_logic_vector(3 downto 0);                     -- red
 			vga_port_hs                    : out   std_logic;                                        -- hs
 			vga_port_vs                    : out   std_logic;                                        -- vs
-			sdram_clk_clk                  : out   std_logic                                         -- clk
+			generator_flag_new_signal      : out   std_logic_vector(7 downto 0);                     -- new_signal
+			game_piece_new_signal          : in    std_logic_vector(15 downto 0) := (others => 'X'); -- new_signal
+			random_noise_new_signal        : in    std_logic_vector(15 downto 0) := (others => 'X'); -- new_signal
+			piece_export_export            : out   std_logic_vector(15 downto 0);                    -- export
+			noise_export_export            : out   std_logic_vector(15 downto 0)                     -- export
 		);
 	end component labfinalsoc;
 
 	u0 : component labfinalsoc
 		port map (
 			clk_clk                        => CONNECTED_TO_clk_clk,                        --                     clk.clk
+			generation_export_export       => CONNECTED_TO_generation_export_export,       --       generation_export.export
 			hex_digits_export              => CONNECTED_TO_hex_digits_export,              --              hex_digits.export
 			key_external_connection_export => CONNECTED_TO_key_external_connection_export, -- key_external_connection.export
+			keyboard_input_new_signal      => CONNECTED_TO_keyboard_input_new_signal,      --          keyboard_input.new_signal
 			keycode_export                 => CONNECTED_TO_keycode_export,                 --                 keycode.export
 			leds_export                    => CONNECTED_TO_leds_export,                    --                    leds.export
 			reset_reset_n                  => CONNECTED_TO_reset_reset_n,                  --                   reset.reset_n
+			sdram_clk_clk                  => CONNECTED_TO_sdram_clk_clk,                  --               sdram_clk.clk
 			sdram_wire_addr                => CONNECTED_TO_sdram_wire_addr,                --              sdram_wire.addr
 			sdram_wire_ba                  => CONNECTED_TO_sdram_wire_ba,                  --                        .ba
 			sdram_wire_cas_n               => CONNECTED_TO_sdram_wire_cas_n,               --                        .cas_n
@@ -60,6 +70,10 @@
 			vga_port_red                   => CONNECTED_TO_vga_port_red,                   --                        .red
 			vga_port_hs                    => CONNECTED_TO_vga_port_hs,                    --                        .hs
 			vga_port_vs                    => CONNECTED_TO_vga_port_vs,                    --                        .vs
-			sdram_clk_clk                  => CONNECTED_TO_sdram_clk_clk                   --               sdram_clk.clk
+			generator_flag_new_signal      => CONNECTED_TO_generator_flag_new_signal,      --          generator_flag.new_signal
+			game_piece_new_signal          => CONNECTED_TO_game_piece_new_signal,          --              game_piece.new_signal
+			random_noise_new_signal        => CONNECTED_TO_random_noise_new_signal,        --            random_noise.new_signal
+			piece_export_export            => CONNECTED_TO_piece_export_export,            --            piece_export.export
+			noise_export_export            => CONNECTED_TO_noise_export_export             --            noise_export.export
 		);
 

@@ -4,7 +4,7 @@
  * Machine generated for CPU 'nios2_gen2_0' in SOPC Builder design 'labfinalsoc'
  * SOPC Builder design path: ../../labfinalsoc.sopcinfo
  *
- * Generated: Sat Apr 16 14:52:28 CDT 2022
+ * Generated: Thu May 05 00:39:14 CDT 2022
  */
 
 /*
@@ -161,19 +161,19 @@
 #define ALT_NUM_INTERNAL_INTERRUPT_CONTROLLERS 1
 #define ALT_NUM_INTERRUPT_CONTROLLERS 1
 #define ALT_STDERR "/dev/jtag_uart"
-#define ALT_STDERR_BASE 0x1b8
+#define ALT_STDERR_BASE 0x218
 #define ALT_STDERR_DEV jtag_uart
 #define ALT_STDERR_IS_JTAG_UART
 #define ALT_STDERR_PRESENT
 #define ALT_STDERR_TYPE "altera_avalon_jtag_uart"
 #define ALT_STDIN "/dev/jtag_uart"
-#define ALT_STDIN_BASE 0x1b8
+#define ALT_STDIN_BASE 0x218
 #define ALT_STDIN_DEV jtag_uart
 #define ALT_STDIN_IS_JTAG_UART
 #define ALT_STDIN_PRESENT
 #define ALT_STDIN_TYPE "altera_avalon_jtag_uart"
 #define ALT_STDOUT "/dev/jtag_uart"
-#define ALT_STDOUT_BASE 0x1b8
+#define ALT_STDOUT_BASE 0x218
 #define ALT_STDOUT_DEV jtag_uart
 #define ALT_STDOUT_IS_JTAG_UART
 #define ALT_STDOUT_PRESENT
@@ -200,13 +200,40 @@
  *
  */
 
-#define ALTPLL_0_BASE 0x190
+#define ALTPLL_0_BASE 0x1f0
 #define ALTPLL_0_IRQ -1
 #define ALTPLL_0_IRQ_INTERRUPT_CONTROLLER_ID -1
 #define ALTPLL_0_NAME "/dev/altpll_0"
 #define ALTPLL_0_SPAN 16
 #define ALTPLL_0_TYPE "altpll"
 #define ALT_MODULE_CLASS_altpll_0 altpll
+
+
+/*
+ * generator_pio configuration
+ *
+ */
+
+#define ALT_MODULE_CLASS_generator_pio altera_avalon_pio
+#define GENERATOR_PIO_BASE 0x1a0
+#define GENERATOR_PIO_BIT_CLEARING_EDGE_REGISTER 0
+#define GENERATOR_PIO_BIT_MODIFYING_OUTPUT_REGISTER 0
+#define GENERATOR_PIO_CAPTURE 0
+#define GENERATOR_PIO_DATA_WIDTH 8
+#define GENERATOR_PIO_DO_TEST_BENCH_WIRING 0
+#define GENERATOR_PIO_DRIVEN_SIM_VALUE 0
+#define GENERATOR_PIO_EDGE_TYPE "NONE"
+#define GENERATOR_PIO_FREQ 50000000
+#define GENERATOR_PIO_HAS_IN 1
+#define GENERATOR_PIO_HAS_OUT 0
+#define GENERATOR_PIO_HAS_TRI 0
+#define GENERATOR_PIO_IRQ -1
+#define GENERATOR_PIO_IRQ_INTERRUPT_CONTROLLER_ID -1
+#define GENERATOR_PIO_IRQ_TYPE "NONE"
+#define GENERATOR_PIO_NAME "/dev/generator_pio"
+#define GENERATOR_PIO_RESET_VALUE 0
+#define GENERATOR_PIO_SPAN 16
+#define GENERATOR_PIO_TYPE "altera_avalon_pio"
 
 
 /*
@@ -253,7 +280,7 @@
  */
 
 #define ALT_MODULE_CLASS_jtag_uart altera_avalon_jtag_uart
-#define JTAG_UART_BASE 0x1b8
+#define JTAG_UART_BASE 0x218
 #define JTAG_UART_IRQ 1
 #define JTAG_UART_IRQ_INTERRUPT_CONTROLLER_ID 0
 #define JTAG_UART_NAME "/dev/jtag_uart"
@@ -271,7 +298,7 @@
  */
 
 #define ALT_MODULE_CLASS_key altera_avalon_pio
-#define KEY_BASE 0x120
+#define KEY_BASE 0x1b0
 #define KEY_BIT_CLEARING_EDGE_REGISTER 0
 #define KEY_BIT_MODIFYING_OUTPUT_REGISTER 0
 #define KEY_CAPTURE 0
@@ -298,7 +325,7 @@
  */
 
 #define ALT_MODULE_CLASS_keycode altera_avalon_pio
-#define KEYCODE_BASE 0x180
+#define KEYCODE_BASE 0x1e0
 #define KEYCODE_BIT_CLEARING_EDGE_REGISTER 0
 #define KEYCODE_BIT_MODIFYING_OUTPUT_REGISTER 0
 #define KEYCODE_CAPTURE 0
@@ -347,6 +374,33 @@
 
 
 /*
+ * noise_pio configuration
+ *
+ */
+
+#define ALT_MODULE_CLASS_noise_pio altera_avalon_pio
+#define NOISE_PIO_BASE 0x180
+#define NOISE_PIO_BIT_CLEARING_EDGE_REGISTER 0
+#define NOISE_PIO_BIT_MODIFYING_OUTPUT_REGISTER 0
+#define NOISE_PIO_CAPTURE 0
+#define NOISE_PIO_DATA_WIDTH 16
+#define NOISE_PIO_DO_TEST_BENCH_WIRING 0
+#define NOISE_PIO_DRIVEN_SIM_VALUE 0
+#define NOISE_PIO_EDGE_TYPE "NONE"
+#define NOISE_PIO_FREQ 50000000
+#define NOISE_PIO_HAS_IN 0
+#define NOISE_PIO_HAS_OUT 1
+#define NOISE_PIO_HAS_TRI 0
+#define NOISE_PIO_IRQ -1
+#define NOISE_PIO_IRQ_INTERRUPT_CONTROLLER_ID -1
+#define NOISE_PIO_IRQ_TYPE "NONE"
+#define NOISE_PIO_NAME "/dev/noise_pio"
+#define NOISE_PIO_RESET_VALUE 0
+#define NOISE_PIO_SPAN 16
+#define NOISE_PIO_TYPE "altera_avalon_pio"
+
+
+/*
  * onchip_memory2_0 configuration
  *
  */
@@ -373,6 +427,33 @@
 #define ONCHIP_MEMORY2_0_SPAN 16
 #define ONCHIP_MEMORY2_0_TYPE "altera_avalon_onchip_memory2"
 #define ONCHIP_MEMORY2_0_WRITABLE 1
+
+
+/*
+ * piece_pio configuration
+ *
+ */
+
+#define ALT_MODULE_CLASS_piece_pio altera_avalon_pio
+#define PIECE_PIO_BASE 0x190
+#define PIECE_PIO_BIT_CLEARING_EDGE_REGISTER 0
+#define PIECE_PIO_BIT_MODIFYING_OUTPUT_REGISTER 0
+#define PIECE_PIO_CAPTURE 0
+#define PIECE_PIO_DATA_WIDTH 16
+#define PIECE_PIO_DO_TEST_BENCH_WIRING 0
+#define PIECE_PIO_DRIVEN_SIM_VALUE 0
+#define PIECE_PIO_EDGE_TYPE "NONE"
+#define PIECE_PIO_FREQ 50000000
+#define PIECE_PIO_HAS_IN 0
+#define PIECE_PIO_HAS_OUT 1
+#define PIECE_PIO_HAS_TRI 0
+#define PIECE_PIO_IRQ -1
+#define PIECE_PIO_IRQ_INTERRUPT_CONTROLLER_ID -1
+#define PIECE_PIO_IRQ_TYPE "NONE"
+#define PIECE_PIO_NAME "/dev/piece_pio"
+#define PIECE_PIO_RESET_VALUE 0
+#define PIECE_PIO_SPAN 16
+#define PIECE_PIO_TYPE "altera_avalon_pio"
 
 
 /*
@@ -451,13 +532,13 @@
  */
 
 #define ALT_MODULE_CLASS_sysid_qsys_0 altera_avalon_sysid_qsys
-#define SYSID_QSYS_0_BASE 0x1b0
+#define SYSID_QSYS_0_BASE 0x210
 #define SYSID_QSYS_0_ID 0
 #define SYSID_QSYS_0_IRQ -1
 #define SYSID_QSYS_0_IRQ_INTERRUPT_CONTROLLER_ID -1
 #define SYSID_QSYS_0_NAME "/dev/sysid_qsys_0"
 #define SYSID_QSYS_0_SPAN 8
-#define SYSID_QSYS_0_TIMESTAMP 1649887545
+#define SYSID_QSYS_0_TIMESTAMP 1651728925
 #define SYSID_QSYS_0_TYPE "altera_avalon_sysid_qsys"
 
 
@@ -493,7 +574,7 @@
  */
 
 #define ALT_MODULE_CLASS_usb_gpx altera_avalon_pio
-#define USB_GPX_BASE 0x130
+#define USB_GPX_BASE 0x1c0
 #define USB_GPX_BIT_CLEARING_EDGE_REGISTER 0
 #define USB_GPX_BIT_MODIFYING_OUTPUT_REGISTER 0
 #define USB_GPX_CAPTURE 0
@@ -520,7 +601,7 @@
  */
 
 #define ALT_MODULE_CLASS_usb_irq altera_avalon_pio
-#define USB_IRQ_BASE 0x150
+#define USB_IRQ_BASE 0x1d0
 #define USB_IRQ_BIT_CLEARING_EDGE_REGISTER 0
 #define USB_IRQ_BIT_MODIFYING_OUTPUT_REGISTER 0
 #define USB_IRQ_CAPTURE 0

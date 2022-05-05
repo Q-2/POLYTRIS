@@ -37,7 +37,7 @@ logic [25:0] counter;
 always @ (posedge CLK) begin
 	if (RESET) counter <= 0;
 	else begin
-		if (((drop) && (counter >= SOFT_DROP)) || ((~drop == 0) && (counter >= divider)))
+		if (((drop) && (counter >= SOFT_DROP)) || ((~drop) && (counter >= divider)))
 			counter <= 0;
 		else
 			counter <= counter + 1;

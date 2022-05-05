@@ -1,10 +1,17 @@
 	component labfinalsoc is
 		port (
 			clk_clk                        : in    std_logic                     := 'X';             -- clk
+			game_piece_new_signal          : in    std_logic_vector(15 downto 0) := (others => 'X'); -- new_signal
+			generation_export_export       : in    std_logic_vector(7 downto 0)  := (others => 'X'); -- export
+			generator_flag_new_signal      : out   std_logic_vector(7 downto 0);                     -- new_signal
 			hex_digits_export              : out   std_logic_vector(15 downto 0);                    -- export
 			key_external_connection_export : in    std_logic_vector(1 downto 0)  := (others => 'X'); -- export
+			keyboard_input_new_signal      : in    std_logic_vector(7 downto 0)  := (others => 'X'); -- new_signal
 			keycode_export                 : out   std_logic_vector(7 downto 0);                     -- export
 			leds_export                    : out   std_logic_vector(13 downto 0);                    -- export
+			noise_export_export            : out   std_logic_vector(15 downto 0);                    -- export
+			piece_export_export            : out   std_logic_vector(15 downto 0);                    -- export
+			random_noise_new_signal        : in    std_logic_vector(15 downto 0) := (others => 'X'); -- new_signal
 			reset_reset_n                  : in    std_logic                     := 'X';             -- reset_n
 			sdram_clk_clk                  : out   std_logic;                                        -- clk
 			sdram_wire_addr                : out   std_logic_vector(12 downto 0);                    -- addr

@@ -40,10 +40,6 @@ module labfinaltop (
       output   [ 3: 0]   VGA_G,
       output   [ 3: 0]   VGA_B,
 
-
-
-
-
       ///////// ARDUINO /////////
       inout    [15: 0]   ARDUINO_IO,
       inout              ARDUINO_RESET_N 
@@ -58,6 +54,8 @@ module labfinaltop (
 	logic [1:0] signs;
 	logic [1:0] hundreds;
 	logic [7:0] keycode;
+	logic [7:0] generator_flag;
+	logic [15:0] game_piece, random_noise;
 
 //=======================================================
 //  Structural coding
@@ -72,9 +70,9 @@ module labfinaltop (
 	assign USB_IRQ = ARDUINO_IO[9];
 	
 	//Assignments specific to Sparkfun USBHostShield-v13
-	//assign ARDUINO_IO[7] = USB_RST;
-	//assign ARDUINO_IO[8] = 1'bZ;
-	//assign USB_GPX = ARDUINO_IO[8];
+	// assign ARDUINO_IO[7] = USB_RST;
+	// assign ARDUINO_IO[8] = 1'bZ;
+	// assign USB_GPX = ARDUINO_IO[8];
 		
 	//Assignments specific to Circuits At Home UHS_20
 	assign ARDUINO_RESET_N = USB_RST;
@@ -151,8 +149,20 @@ module labfinaltop (
 		.vga_port_green (VGA_G),
 		.vga_port_blue (VGA_B),
 		.vga_port_hs (VGA_HS),
-		.vga_port_vs (VGA_VS)
-		
+		.vga_port_vs (VGA_VS),
+		.keyboard_input_new_signal (keycode),
+		.generator_flag_new_signal (generator_flag),
+		.game_piece_new_signal (game_piece),
+		.random_noise_new_signal (random_noise),
+
+		//Generator PIO
+		.generation_export_export (generator_flag),
+
+		//Piece PIO
+		.piece_export_export (game_piece),
+
+		//Random noise PIO
+		.noise_export_export (random_noise)
 	 );
 
 endmodule

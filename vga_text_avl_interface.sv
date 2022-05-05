@@ -19,14 +19,21 @@ module vga_text_avl_interface (
 	
 	// Exported Conduit (mapped to VGA port - make sure you export in Platform Designer)
 	output logic [3:0]  red, green, blue,	// VGA color channels (mapped to output pins in top-level)
-	output logic hs, vs						// VGA HS/VS
+	output logic hs, vs,						// VGA HS/VS
+	
+	//new exported conduits
+	input logic [7:0] keyboard_input,
+	input logic [15:0] random_noise,
+	input logic [15:0] game_piece,
+	output logic [7:0] generator_flag
+
 );
 logic [31:0] TEMP_WRITE_DATA;
 logic [11:0] FONT_ADDR;
 logic [15:0]  FONT_DATA;
 logic VGA_CLK;
 logic blank;
-logic sync;
+logic sync; 
 logic [31:0] LOCAL_REG [30];
 logic [9:0] DrawX, DrawY; // Registers
 //put other local variables here
@@ -35,6 +42,8 @@ logic [3:0] FGD_R, FGD_G, FGD_B, BKG_R, BKG_G, BKG_B;
 logic [1:0] PIXEL_VAL;
 logic [19:0] VGA_DATA;
 logic [3:0] LENGTH; 
+
+assign generator_flag = State_out;
 
 //Declare submodules..e.g. VGA controller, ROMS, etc
 
@@ -54,6 +63,8 @@ logic [3:0] LENGTH;
 // 	.q_b(VGA_DATA)
 // );
 
+
+
 vga_controller text_writing_controller_instantiation(
 .Clk(CLK),
 .Reset(RESET),
@@ -65,11 +76,10 @@ vga_controller text_writing_controller_instantiation(
 .DrawX(DrawX),
 .DrawY(DrawY)
 );
-
+//SIG_ENDGAME
 //state machine variables
 logic [1:0] rotate;
 logic       clearline;
-logic [7:0] keyboardinput;
 logic       pieceplaced;
 logic       placepiece;
 logic       ground_notif;
@@ -92,26 +102,28 @@ logic   SIG_FALL, //TODO: ADD SIGNALS TO GAMEBOARD
 		SIG_HOLDPIECE_2,
 		SIG_HOLDPIECE_3,
 		SIG_CLEARALL,
-		SIG_LOGO;
+		SIG_LOGO,
+		SIG_LOADPIECE;
+logic [4:0] State_out;
 
-statemachine game_states(.*);
+statemachine game_states(.*, .keyboardinput(keyboard_input));
 
 //game board variables
 logic [3:0]piece_buffer[3:0];
 logic [10:0] RAM_ROW_ADDR;
 logic RAM_WE, RAM_RE;
 logic RAM_WRITEDATA;
-logic [3:0]collision;
-logic [3:0]sandboxLR;
-logic [4:0]sandboxUD;
+logic [5:0]collision;
 logic [3:0]sandbox[3:0];
+logic [29:0]clearlineflags;
+logic [3:0]ground_counter;
 
-gameboard game_board(.*, 
+gameboard_2 game_board(.*,.sandboxLR(SANDBOX_X), .sandboxUD(SANDBOX_Y),
+		.sandbox(sandbox),
 		.board_data(LOCAL_REG),
 		.ROTATELEFT(SIG_ROTATELEFT),
-		.ROTATELEFT_2(SIG_ROTATELEFT_2),
 		.ROTATERIGHT(SIG_ROTATERIGHT),
-		.ROTATERIGHT_2(SIG_ROTATERIGHT_2),
+		.LOADPIECE(SIG_LOADPIECE),
 		.FALL(SIG_FALL),
 		.MOVELEFT(SIG_MOVELEFT),
 		.MOVERIGHT(SIG_MOVERIGHT),
@@ -129,15 +141,7 @@ gameboard game_board(.*,
 		.LOGO(SIG_LOGO)
 		);
 
-//clock for falling pieces
-logic drop;
-clk_two_electric_boogaloo game_clock(
-	.CLK(CLK),
-	.RESET(RESET),
-	.drop(drop),
-	.level(LEVEL),
-	.piece_clk(piece_clk)
-);
+
 
 //background colors
 // assign BGD_REG[0] = 12'h777; //gray
@@ -145,8 +149,59 @@ clk_two_electric_boogaloo game_clock(
 // assign BGD_REG[2] = 12'hfff; //white
 // assign BGD_REG[3] = 12'h620; //red
 logic [11:0] PIXEL_COLOR;
-
+logic [2:0]RANDOMIZER;
+int i;
+int j; 
 always_ff @(posedge VGA_CLK) begin
+//Background colors
+if(SIG_ENDGAME)begin
+	BKG_B <= 4'b0111;
+	BKG_G <= 4'b0000;
+	BKG_R <= 4'b0111;
+end
+else if(SIG_MOVELEFT)begin
+	BKG_B <= 4'b0000;
+	BKG_G <= 4'b1111;
+	BKG_R <= 4'b0000;
+end
+else if(SIG_MOVERIGHT)begin
+	BKG_B <= 4'b0000;
+	BKG_G <= 4'b0000;
+	BKG_R <= 4'b1111;
+end
+else if(SIG_FALL)begin
+	BKG_B <= 4'b1111;
+	BKG_G <= 4'b1111;
+	BKG_R <= 4'b1111;
+end
+else if(SIG_CLEARLINE)begin
+	BKG_B <= 4'b1111;
+	BKG_G <= 4'b1111;
+	BKG_R <= 4'b0000;
+end
+else if(SIG_LOADPIECE)begin
+	BKG_B <= 4'b0111;
+	BKG_G <= 4'b0111;
+	BKG_R <= 4'b1111;
+end
+else if(SIG_PIECEPLACED)begin
+	BKG_B <= 4'b0111;
+	BKG_G <= 4'b0111;
+	BKG_R <= 4'b1111;
+end
+else
+begin
+	BKG_B <= PIXEL_COLOR[3:0];
+	BKG_G <= PIXEL_COLOR[7:4];
+	BKG_R <= PIXEL_COLOR[11:8];
+end
+//piece buffer
+
+for(i = 0; i < 4; i = i + 1)begin
+	for(j = 0; j < 4; j = j + 1)begin
+		piece_buffer[i][j] <= 1'b1;
+	end
+end
 //board
 	if ((DrawX > 240) && (DrawX < 400)) begin
 		if (blank) begin
@@ -154,15 +209,28 @@ always_ff @(posedge VGA_CLK) begin
 			green = PIXEL_COLOR[7:4];
 			blue = PIXEL_COLOR[3:0];
 		end
+		else begin
+			red = 4'b0000;
+			green = 4'b0000;
+			blue = 4'b0000;
+		end
 	end
 //board borders
 	else if (((DrawX > 232) && (DrawX < 240)) || ((DrawX > 400) && (DrawX < 408))) begin
-		red = 4'hc;
-		blue = 4'hf;
-		green = 4'hf; 
+		if (blank) begin
+			red = 4'ha;
+			blue = 4'hf;
+			green = 4'hf; 
+		end
+		else begin
+			red = 4'b0000;
+			green = 4'b0000;
+			blue = 4'b0000;
+		end
 	end
  //score box
  	else if (((DrawX > 432) && (DrawX < 544)) && ((DrawY > 32) && (DrawY < 128))) begin
+	 	if (blank) begin
 			if(FONT_PIXEL) begin
 				red = 4'hf;
 				blue = 4'hf;
@@ -173,37 +241,78 @@ always_ff @(posedge VGA_CLK) begin
 				blue = 4'h0;
 				green = 4'h0;
 			end
+		end
+		else begin
+			red = 4'b0000;
+			green = 4'b0000;
+			blue = 4'b0000;
+		end
  	end
  //level box
  	else if (((DrawX > 432) && (DrawX < 528)) && ((DrawY > 304) && (DrawY < 352))) begin
- 		red = 4'h0;
- 		blue = 4'h0;
- 		green = 4'h0;
+		if (blank) begin
+ 			red = 4'h0;
+ 			blue = 4'h0;
+ 			green = 4'h0;
+		end
+		else begin
+			red = 4'b0000;
+			green = 4'b0000;
+			blue = 4'b0000;
+		end
  	end
  //stats box
  	else if (((DrawX > 62) && (DrawX < 192)) && ((DrawY > 128) && (DrawY < 432))) begin
- 		red = 4'h0;
- 		blue = 4'h0;
- 		green = 4'h0;
+		if (blank) begin
+			red = 4'h0;
+			blue = 4'h0;
+			green = 4'h0;
+		end
+		else begin
+			red = 4'b0000;
+			green = 4'b0000;
+			blue = 4'b0000;
+		end
  	end
 //the rest of the background
 	else begin
-		red = 4'ha;
-		blue = 4'ha;
-		green = 4'ha;
+		if (blank) begin
+			red =   BKG_R;
+			blue =  BKG_B;
+			green = BKG_G;
+		end
+		else begin
+			red = 4'b0000;
+			green = 4'b0000;
+			blue = 4'b0000;
+		end
 	end
 //next piece border
 	if (((DrawX > 424) && (DrawX < 504)) && ((DrawY > 184) && (DrawY < 280))) begin
-		red = 4'hc;
-		blue = 4'hf;
-		green = 4'hf;
+		if (blank) begin
+			red = 4'hc;
+			blue = 4'hf;
+			green = 4'hf;
+		end
+		else begin
+			red = 4'b0000;
+			green = 4'b0000;
+			blue = 4'b0000;
+		end
 	end
 	else;
 //next piece box
 	if (((DrawX > 432) && (DrawX < 496)) && ((DrawY > 192) && (DrawY < 272))) begin
-		red = 4'h0;
-		blue = 4'h0;
-		green = 4'h0;
+		if (blank) begin
+			red = 4'h0;
+			blue = 4'h0;
+			green = 4'h0;
+		end
+		else begin
+			red = 4'b0000;
+			green = 4'b0000;
+			blue = 4'b0000;
+		end
 	end
 	else;
 end
@@ -213,7 +322,6 @@ logic [31:0] SPRITE_DATA;
 logic [11:0] COLOR_0, COLOR_1, COLOR_2, COLOR_3;
 
  //sandbox variables
-logic [3:0] SANDBOX [4];
 logic [4:0] SANDBOX_X;
 logic [5:0] SANDBOX_Y;
 logic [4:0] PIECE_LENGTH;
@@ -228,7 +336,9 @@ logic [8:0] BoardX, BoardY;
 logic [4:0] REGPOS_X, REGPOS_Y;
 logic [2:0] LEVEL;
 //TODO: test case
+assign PIECE_LENGTH = 2'b1;
 assign LEVEL = 3'b001;
+
 
 //obtain board position
 assign BoardX = DrawX - 240;
@@ -240,10 +350,10 @@ always_comb begin
     SPRITE_ADDR = {VGA_DATA[(REGPOS_X*2+1)-:2], BoardY[3:0]};
     REGPOS_Y = BoardY[8:4];
     REGPOS_X = BoardX[8:4];
-    PIECE_STYLE = ((PIECE_LENGTH % 3) + 1)&SANDBOX[REGPOS_X - SANDBOX_X][REGPOS_Y - SANDBOX_Y];
+   	PIECE_STYLE = ((PIECE_LENGTH % 3) + 1)&sandbox[REGPOS_X - SANDBOX_X+3][REGPOS_Y - SANDBOX_Y+3];
 
-if ((REGPOS_X + 4>= SANDBOX_X ) && (REGPOS_X  <= SANDBOX_X - 1) && (REGPOS_Y + 4 >= SANDBOX_Y) && (REGPOS_Y <= SANDBOX_Y - 1)) begin
-    VGA_DATA = {PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE};;
+if ((REGPOS_X + 3>= SANDBOX_X ) && (REGPOS_X  <= SANDBOX_X ) && (REGPOS_Y + 3 >= SANDBOX_Y) && (REGPOS_Y <= SANDBOX_Y)) begin
+	VGA_DATA = {PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE};
 end
 else begin
     VGA_DATA = LOCAL_REG[REGPOS_Y][19:0];
@@ -255,14 +365,6 @@ case (PIXEL_VAL)
     default: PIXEL_COLOR = COLOR_3; //white
 endcase
 //TEST todo Sandbox and Gameboard Contents (local reg = gameboard)
-LOCAL_REG[0] = 32'b11111111111111111111010011011011;
-LOCAL_REG[4] = 32'b11111111111111111111010011011011;
-SANDBOX[0][0] = 1'b1;
-SANDBOX[1][0] = 1'b1;
-SANDBOX[0][1] = 1'b1;
-SANDBOX[3][3] = 1'b1;
-SANDBOX_X = 10;
-SANDBOX_Y = 10;
 end
 always_comb begin
 //obtain score box position
@@ -293,53 +395,5 @@ palette level_colors(.LEVEL(LEVEL), .COLOR_0(COLOR_0), .COLOR_1(COLOR_1), .COLOR
 score_reg char_code(.CHAR_ADDR(CHAR_ADDR), .CHAR_DATA(CHAR_DATA));
 
 font_rom(.FONT_ADDR(FONT_ADDR), .FONT_DATA(FONT_DATA));
-
-/*
-//check if it's a piece
-FGD_ID = LSD_VISION[7:4];
-FGD_REG = FGD_ID[3:1]; //divide by two, take floor to get palette register
-if (FGD_ID[0]==0)
-	FGD_LSD_COLOR = PALLET_REG[FGD_REG][12:1];
-else 
-	FGD_LSD_COLOR = PALLET_REG[FGD_REG][24:13];
-FGD_R = FGD_LSD_COLOR[3:0];
-FGD_G = FGD_LSD_COLOR[7:4];
-FGD_B = FGD_LSD_COLOR[11:8];
-
-//bkg color
-BKG_ID = LSD_VISION[3:0];
-BKG_REG = BKG_ID[3:1]; //divide by two, take floor to get palette register
-if (BKG_ID[0]==0)
-	BKG_LSD_COLOR = PALLET_REG[BKG_REG][12:1];
-else begin
-	BKG_LSD_COLOR = PALLET_REG[BKG_REG][24:13];
-	BKG_R = BKG_LSD_COLOR[3:0];
-	BKG_G = BKG_LSD_COLOR[7:4];
-	BKG_B = BKG_LSD_COLOR[11:8];
-	end
-end
-
-always_ff @(posedge VGA_CLK) begin
-//handle drawing (may either be combinational or sequential - or both).
-	//reading FGD_R, FGD_G, FGD_B, BKG_R, BKG_G, BKG_B values
-		if(blank) begin 
-			if(PIXEL_VAL) begin
-				red = FGD_R;
-				blue = FGD_B;
-				green = FGD_G;
-			end
-			else begin
-				red = BKG_R;
-				blue = BKG_B;
-				green = BKG_G;
-			end
-		end
-		else begin
-			red = 4'b0000;
-			green = 4'b0000;
-			blue = 4'b0000;
-		end
-end
-*/
 	
 endmodule

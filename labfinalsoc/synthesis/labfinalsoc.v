@@ -5,10 +5,17 @@
 `timescale 1 ps / 1 ps
 module labfinalsoc (
 		input  wire        clk_clk,                        //                     clk.clk
+		input  wire [15:0] game_piece_new_signal,          //              game_piece.new_signal
+		input  wire [7:0]  generation_export_export,       //       generation_export.export
+		output wire [7:0]  generator_flag_new_signal,      //          generator_flag.new_signal
 		output wire [15:0] hex_digits_export,              //              hex_digits.export
 		input  wire [1:0]  key_external_connection_export, // key_external_connection.export
+		input  wire [7:0]  keyboard_input_new_signal,      //          keyboard_input.new_signal
 		output wire [7:0]  keycode_export,                 //                 keycode.export
 		output wire [13:0] leds_export,                    //                    leds.export
+		output wire [15:0] noise_export_export,            //            noise_export.export
+		output wire [15:0] piece_export_export,            //            piece_export.export
+		input  wire [15:0] random_noise_new_signal,        //            random_noise.new_signal
 		input  wire        reset_reset_n,                  //                   reset.reset_n
 		output wire        sdram_clk_clk,                  //               sdram_clk.clk
 		output wire [12:0] sdram_wire_addr,                //              sdram_wire.addr
@@ -122,6 +129,18 @@ module labfinalsoc (
 	wire   [1:0] mm_interconnect_0_usb_rst_s1_address;                                    // mm_interconnect_0:usb_rst_s1_address -> usb_rst:address
 	wire         mm_interconnect_0_usb_rst_s1_write;                                      // mm_interconnect_0:usb_rst_s1_write -> usb_rst:write_n
 	wire  [31:0] mm_interconnect_0_usb_rst_s1_writedata;                                  // mm_interconnect_0:usb_rst_s1_writedata -> usb_rst:writedata
+	wire  [31:0] mm_interconnect_0_generator_pio_s1_readdata;                             // generator_pio:readdata -> mm_interconnect_0:generator_pio_s1_readdata
+	wire   [1:0] mm_interconnect_0_generator_pio_s1_address;                              // mm_interconnect_0:generator_pio_s1_address -> generator_pio:address
+	wire         mm_interconnect_0_piece_pio_s1_chipselect;                               // mm_interconnect_0:piece_pio_s1_chipselect -> piece_pio:chipselect
+	wire  [31:0] mm_interconnect_0_piece_pio_s1_readdata;                                 // piece_pio:readdata -> mm_interconnect_0:piece_pio_s1_readdata
+	wire   [1:0] mm_interconnect_0_piece_pio_s1_address;                                  // mm_interconnect_0:piece_pio_s1_address -> piece_pio:address
+	wire         mm_interconnect_0_piece_pio_s1_write;                                    // mm_interconnect_0:piece_pio_s1_write -> piece_pio:write_n
+	wire  [31:0] mm_interconnect_0_piece_pio_s1_writedata;                                // mm_interconnect_0:piece_pio_s1_writedata -> piece_pio:writedata
+	wire         mm_interconnect_0_noise_pio_s1_chipselect;                               // mm_interconnect_0:noise_pio_s1_chipselect -> noise_pio:chipselect
+	wire  [31:0] mm_interconnect_0_noise_pio_s1_readdata;                                 // noise_pio:readdata -> mm_interconnect_0:noise_pio_s1_readdata
+	wire   [1:0] mm_interconnect_0_noise_pio_s1_address;                                  // mm_interconnect_0:noise_pio_s1_address -> noise_pio:address
+	wire         mm_interconnect_0_noise_pio_s1_write;                                    // mm_interconnect_0:noise_pio_s1_write -> noise_pio:write_n
+	wire  [31:0] mm_interconnect_0_noise_pio_s1_writedata;                                // mm_interconnect_0:noise_pio_s1_writedata -> noise_pio:writedata
 	wire         mm_interconnect_0_spi_0_spi_control_port_chipselect;                     // mm_interconnect_0:spi_0_spi_control_port_chipselect -> spi_0:spi_select
 	wire  [15:0] mm_interconnect_0_spi_0_spi_control_port_readdata;                       // spi_0:data_to_cpu -> mm_interconnect_0:spi_0_spi_control_port_readdata
 	wire   [2:0] mm_interconnect_0_spi_0_spi_control_port_address;                        // mm_interconnect_0:spi_0_spi_control_port_address -> spi_0:mem_addr
@@ -132,26 +151,30 @@ module labfinalsoc (
 	wire         irq_mapper_receiver1_irq;                                                // timer:irq -> irq_mapper:receiver1_irq
 	wire         irq_mapper_receiver2_irq;                                                // spi_0:irq -> irq_mapper:receiver2_irq
 	wire  [31:0] nios2_gen2_0_irq_irq;                                                    // irq_mapper:sender_irq -> nios2_gen2_0:irq
-	wire         rst_controller_reset_out_reset;                                          // rst_controller:reset_out -> [VGA_text_mode_controller_0:RESET, mm_interconnect_0:VGA_text_mode_controller_0_RESET_reset_bridge_in_reset_reset]
+	wire         rst_controller_reset_out_reset;                                          // rst_controller:reset_out -> [VGA_text_mode_controller_0:RESET, generator_pio:reset_n, mm_interconnect_0:VGA_text_mode_controller_0_RESET_reset_bridge_in_reset_reset, noise_pio:reset_n, piece_pio:reset_n]
 	wire         rst_controller_001_reset_out_reset;                                      // rst_controller_001:reset_out -> [altpll_0:reset, hex_digits:reset_n, irq_mapper:reset, jtag_uart:rst_n, key:reset_n, keycode:reset_n, leds_pio:reset_n, mm_interconnect_0:nios2_gen2_0_reset_reset_bridge_in_reset_reset, nios2_gen2_0:reset_n, onchip_memory2_0:reset, rst_translator:in_reset, sdram:reset_n, spi_0:reset_n, sysid_qsys_0:reset_n, timer:reset_n, usb_gpx:reset_n, usb_irq:reset_n, usb_rst:reset_n]
 	wire         rst_controller_001_reset_out_reset_req;                                  // rst_controller_001:reset_req -> [nios2_gen2_0:reset_req, onchip_memory2_0:reset_req, rst_translator:reset_req_in]
 	wire         nios2_gen2_0_debug_reset_request_reset;                                  // nios2_gen2_0:debug_reset_request -> rst_controller_001:reset_in1
 
 	vga_text_avl_interface vga_text_mode_controller_0 (
-		.CLK           (clk_clk),                                                                 //             CLK.clk
-		.RESET         (rst_controller_reset_out_reset),                                          //           RESET.reset
-		.AVL_CS        (mm_interconnect_0_vga_text_mode_controller_0_avalon_mm_slave_chipselect), // avalon_mm_slave.chipselect
-		.AVL_BYTE_EN   (mm_interconnect_0_vga_text_mode_controller_0_avalon_mm_slave_byteenable), //                .byteenable
-		.AVL_ADDR      (mm_interconnect_0_vga_text_mode_controller_0_avalon_mm_slave_address),    //                .address
-		.AVL_READ      (mm_interconnect_0_vga_text_mode_controller_0_avalon_mm_slave_read),       //                .read
-		.AVL_READDATA  (mm_interconnect_0_vga_text_mode_controller_0_avalon_mm_slave_readdata),   //                .readdata
-		.AVL_WRITE     (mm_interconnect_0_vga_text_mode_controller_0_avalon_mm_slave_write),      //                .write
-		.AVL_WRITEDATA (mm_interconnect_0_vga_text_mode_controller_0_avalon_mm_slave_writedata),  //                .writedata
-		.blue          (vga_port_blue),                                                           //        VGA_port.blue
-		.green         (vga_port_green),                                                          //                .green
-		.red           (vga_port_red),                                                            //                .red
-		.hs            (vga_port_hs),                                                             //                .hs
-		.vs            (vga_port_vs)                                                              //                .vs
+		.CLK            (clk_clk),                                                                 //             CLK.clk
+		.RESET          (rst_controller_reset_out_reset),                                          //           RESET.reset
+		.AVL_CS         (mm_interconnect_0_vga_text_mode_controller_0_avalon_mm_slave_chipselect), // avalon_mm_slave.chipselect
+		.AVL_BYTE_EN    (mm_interconnect_0_vga_text_mode_controller_0_avalon_mm_slave_byteenable), //                .byteenable
+		.AVL_ADDR       (mm_interconnect_0_vga_text_mode_controller_0_avalon_mm_slave_address),    //                .address
+		.AVL_READ       (mm_interconnect_0_vga_text_mode_controller_0_avalon_mm_slave_read),       //                .read
+		.AVL_READDATA   (mm_interconnect_0_vga_text_mode_controller_0_avalon_mm_slave_readdata),   //                .readdata
+		.AVL_WRITE      (mm_interconnect_0_vga_text_mode_controller_0_avalon_mm_slave_write),      //                .write
+		.AVL_WRITEDATA  (mm_interconnect_0_vga_text_mode_controller_0_avalon_mm_slave_writedata),  //                .writedata
+		.blue           (vga_port_blue),                                                           //        VGA_port.blue
+		.green          (vga_port_green),                                                          //                .green
+		.red            (vga_port_red),                                                            //                .red
+		.hs             (vga_port_hs),                                                             //                .hs
+		.vs             (vga_port_vs),                                                             //                .vs
+		.keyboard_input (keyboard_input_new_signal),                                               //        keyboard.new_signal
+		.generator_flag (generator_flag_new_signal),                                               //       generator.new_signal
+		.game_piece     (game_piece_new_signal),                                                   //           piece.new_signal
+		.random_noise   (random_noise_new_signal)                                                  //           noise.new_signal
 	);
 
 	labfinalsoc_altpll_0 altpll_0 (
@@ -179,6 +202,14 @@ module labfinalsoc (
 		.scanclkena         (1'b0),                                           //           (terminated)
 		.scandata           (1'b0),                                           //           (terminated)
 		.configupdate       (1'b0)                                            //           (terminated)
+	);
+
+	labfinalsoc_generator_pio generator_pio (
+		.clk      (clk_clk),                                     //                 clk.clk
+		.reset_n  (~rst_controller_reset_out_reset),             //               reset.reset_n
+		.address  (mm_interconnect_0_generator_pio_s1_address),  //                  s1.address
+		.readdata (mm_interconnect_0_generator_pio_s1_readdata), //                    .readdata
+		.in_port  (generation_export_export)                     // external_connection.export
 	);
 
 	labfinalsoc_hex_digits hex_digits (
@@ -264,6 +295,17 @@ module labfinalsoc (
 		.dummy_ci_port                       ()                                                            // custom_instruction_master.readra
 	);
 
+	labfinalsoc_hex_digits noise_pio (
+		.clk        (clk_clk),                                   //                 clk.clk
+		.reset_n    (~rst_controller_reset_out_reset),           //               reset.reset_n
+		.address    (mm_interconnect_0_noise_pio_s1_address),    //                  s1.address
+		.write_n    (~mm_interconnect_0_noise_pio_s1_write),     //                    .write_n
+		.writedata  (mm_interconnect_0_noise_pio_s1_writedata),  //                    .writedata
+		.chipselect (mm_interconnect_0_noise_pio_s1_chipselect), //                    .chipselect
+		.readdata   (mm_interconnect_0_noise_pio_s1_readdata),   //                    .readdata
+		.out_port   (noise_export_export)                        // external_connection.export
+	);
+
 	labfinalsoc_onchip_memory2_0 onchip_memory2_0 (
 		.clk        (clk_clk),                                          //   clk1.clk
 		.address    (mm_interconnect_0_onchip_memory2_0_s1_address),    //     s1.address
@@ -276,6 +318,17 @@ module labfinalsoc (
 		.reset      (rst_controller_001_reset_out_reset),               // reset1.reset
 		.reset_req  (rst_controller_001_reset_out_reset_req),           //       .reset_req
 		.freeze     (1'b0)                                              // (terminated)
+	);
+
+	labfinalsoc_hex_digits piece_pio (
+		.clk        (clk_clk),                                   //                 clk.clk
+		.reset_n    (~rst_controller_reset_out_reset),           //               reset.reset_n
+		.address    (mm_interconnect_0_piece_pio_s1_address),    //                  s1.address
+		.write_n    (~mm_interconnect_0_piece_pio_s1_write),     //                    .write_n
+		.writedata  (mm_interconnect_0_piece_pio_s1_writedata),  //                    .writedata
+		.chipselect (mm_interconnect_0_piece_pio_s1_chipselect), //                    .chipselect
+		.readdata   (mm_interconnect_0_piece_pio_s1_readdata),   //                    .readdata
+		.out_port   (piece_export_export)                        // external_connection.export
 	);
 
 	labfinalsoc_sdram sdram (
@@ -383,6 +436,8 @@ module labfinalsoc (
 		.altpll_0_pll_slave_read                                      (mm_interconnect_0_altpll_0_pll_slave_read),                               //                                                       .read
 		.altpll_0_pll_slave_readdata                                  (mm_interconnect_0_altpll_0_pll_slave_readdata),                           //                                                       .readdata
 		.altpll_0_pll_slave_writedata                                 (mm_interconnect_0_altpll_0_pll_slave_writedata),                          //                                                       .writedata
+		.generator_pio_s1_address                                     (mm_interconnect_0_generator_pio_s1_address),                              //                                       generator_pio_s1.address
+		.generator_pio_s1_readdata                                    (mm_interconnect_0_generator_pio_s1_readdata),                             //                                                       .readdata
 		.hex_digits_s1_address                                        (mm_interconnect_0_hex_digits_s1_address),                                 //                                          hex_digits_s1.address
 		.hex_digits_s1_write                                          (mm_interconnect_0_hex_digits_s1_write),                                   //                                                       .write
 		.hex_digits_s1_readdata                                       (mm_interconnect_0_hex_digits_s1_readdata),                                //                                                       .readdata
@@ -415,6 +470,11 @@ module labfinalsoc (
 		.nios2_gen2_0_debug_mem_slave_byteenable                      (mm_interconnect_0_nios2_gen2_0_debug_mem_slave_byteenable),               //                                                       .byteenable
 		.nios2_gen2_0_debug_mem_slave_waitrequest                     (mm_interconnect_0_nios2_gen2_0_debug_mem_slave_waitrequest),              //                                                       .waitrequest
 		.nios2_gen2_0_debug_mem_slave_debugaccess                     (mm_interconnect_0_nios2_gen2_0_debug_mem_slave_debugaccess),              //                                                       .debugaccess
+		.noise_pio_s1_address                                         (mm_interconnect_0_noise_pio_s1_address),                                  //                                           noise_pio_s1.address
+		.noise_pio_s1_write                                           (mm_interconnect_0_noise_pio_s1_write),                                    //                                                       .write
+		.noise_pio_s1_readdata                                        (mm_interconnect_0_noise_pio_s1_readdata),                                 //                                                       .readdata
+		.noise_pio_s1_writedata                                       (mm_interconnect_0_noise_pio_s1_writedata),                                //                                                       .writedata
+		.noise_pio_s1_chipselect                                      (mm_interconnect_0_noise_pio_s1_chipselect),                               //                                                       .chipselect
 		.onchip_memory2_0_s1_address                                  (mm_interconnect_0_onchip_memory2_0_s1_address),                           //                                    onchip_memory2_0_s1.address
 		.onchip_memory2_0_s1_write                                    (mm_interconnect_0_onchip_memory2_0_s1_write),                             //                                                       .write
 		.onchip_memory2_0_s1_readdata                                 (mm_interconnect_0_onchip_memory2_0_s1_readdata),                          //                                                       .readdata
@@ -422,6 +482,11 @@ module labfinalsoc (
 		.onchip_memory2_0_s1_byteenable                               (mm_interconnect_0_onchip_memory2_0_s1_byteenable),                        //                                                       .byteenable
 		.onchip_memory2_0_s1_chipselect                               (mm_interconnect_0_onchip_memory2_0_s1_chipselect),                        //                                                       .chipselect
 		.onchip_memory2_0_s1_clken                                    (mm_interconnect_0_onchip_memory2_0_s1_clken),                             //                                                       .clken
+		.piece_pio_s1_address                                         (mm_interconnect_0_piece_pio_s1_address),                                  //                                           piece_pio_s1.address
+		.piece_pio_s1_write                                           (mm_interconnect_0_piece_pio_s1_write),                                    //                                                       .write
+		.piece_pio_s1_readdata                                        (mm_interconnect_0_piece_pio_s1_readdata),                                 //                                                       .readdata
+		.piece_pio_s1_writedata                                       (mm_interconnect_0_piece_pio_s1_writedata),                                //                                                       .writedata
+		.piece_pio_s1_chipselect                                      (mm_interconnect_0_piece_pio_s1_chipselect),                               //                                                       .chipselect
 		.sdram_s1_address                                             (mm_interconnect_0_sdram_s1_address),                                      //                                               sdram_s1.address
 		.sdram_s1_write                                               (mm_interconnect_0_sdram_s1_write),                                        //                                                       .write
 		.sdram_s1_read                                                (mm_interconnect_0_sdram_s1_read),                                         //                                                       .read
