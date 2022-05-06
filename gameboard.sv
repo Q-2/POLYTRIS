@@ -21,8 +21,7 @@ TODO: IMPLEMENT COLLISION LOGIC FOR TRANSLATIONS (Fall,Konami,L/R)
 
 parameter DEFAULTPOSLR = 8;
 parameter DEFAULTPOSUD = 0; //18      17            16           15          14     13          12          11            10             9            8       7          6          5          4          3             2        1       0     
-logic [18:0] State = {ROTATELEFT, ROTATELEFT_2, ROTATERIGHT, ROTATERIGHT_2, FALL, MOVELEFT, MOVERIGHT, PIECEPLACED, CLEARLINECHECK, CLEARLINEACT, CLEARLINE, KONAMI, NONEINPUT, HOLDPIECE, HOLDPIECE_2, HOLDPIECE_3, ENDGAME, CLEARALL, LOGO}
-
+logic [18:0] State = {ROTATELEFT, ROTATELEFT_2, ROTATERIGHT, ROTATERIGHT_2, FALL, MOVELEFT, MOVERIGHT, PIECEPLACED, CLEARLINECHECK, CLEARLINEACT, CLEARLINE, KONAMI, NONEINPUT, HOLDPIECE, HOLDPIECE_2, HOLDPIECE_3, ENDGAME, CLEARALL, LOGO};
 logic [3:0]preliminarysandbox[3:0];
 logic [3:0]holdbox[3:0];
 logic [3:0]board_data_slice[3:0];
@@ -175,6 +174,5 @@ CLEARALL : begin
         end 
     end
 end
-end
-endcase
+
 endmodule

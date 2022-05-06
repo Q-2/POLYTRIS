@@ -2,7 +2,7 @@ module gameboard_2(
     input logic [3:0]piece_buffer[3:0], //may need more bits
     input logic CLK,
     input logic ROTATELEFT, ROTATERIGHT, LOADPIECE, FALL, MOVELEFT, MOVERIGHT, PIECEPLACED, CLEARLINECHECK, CLEARLINEACT, CLEARLINE, KONAMI, NONEINPUT, HOLDPIECE, HOLDPIECE_2, HOLDPIECE_3, ENDGAME, CLEARALL, LOGO,
-    input logic [4:0] PIECE_LENGTH,
+    input logic [3:0] PIECE_LENGTH,
     output logic [10:0] RAM_ROW_ADDR,
     output logic RAM_WE, RAM_RE,
     output logic RAM_WRITEDATA,
@@ -13,7 +13,8 @@ module gameboard_2(
     output logic [5:0]clearlineval,
     output logic [29:0]clearlineflags,
     output logic [3:0]ground_counter,
-    output logic [31:0]board_data[29:0]
+    output logic [31:0]board_data[29:0],
+    output logic [5:0]numberoflines
 
     );
 
@@ -27,15 +28,20 @@ int i;
 int j;
 logic [5:0]board_data_slice[5:0];
 logic [9:0]interpreted_boarddata[30];
+
 int row;
 int bitpair;
 logic JUNK; //just for the state thing
  //                      18      17            16           15          14     13          12          11            10             9            8       7          6          5          4          3             2        1       0     
 assign State = {ROTATELEFT,    JUNK      , ROTATERIGHT, LOADPIECE   , FALL, MOVELEFT, MOVERIGHT, PIECEPLACED, CLEARLINECHECK, CLEARLINEACT, CLEARLINE, KONAMI, NONEINPUT, HOLDPIECE, HOLDPIECE_2, HOLDPIECE_3, ENDGAME, CLEARALL, LOGO};
 logic [3:0]preliminaryLEFT[3:0];
+logic [3:0]delayedprelLEFT[3:0];
+logic [3:0]delayedprelRIGHT[3:0];
 /////////////////////////////////////////////
 /////////////////////////////////////////////
     always_ff @ (posedge CLK) begin
+	 delayedprelLEFT <= preliminaryLEFT; 
+	 delayedprelRIGHT <= preliminaryRIGHT; 
 /////////////////////////////////////////////
     //Move Left
     if(State[13])
@@ -57,11 +63,11 @@ logic [3:0]preliminaryLEFT[3:0];
     //Fall
     if(State[14])
     begin
-        //if(~collision[1])
-        //sandboxUD <= sandboxUD + 1;
-        //else begin
-        //    ground_counter = ground_counter  + 1;
-        //end
+        if(~collision[1])
+        sandboxUD <= sandboxUD + 1;
+        else begin
+            ground_counter <= ground_counter  + 1;
+        end
     end
 
 /////////////////////////////////////////////
@@ -83,7 +89,7 @@ logic [3:0]preliminaryLEFT[3:0];
     */
     for(i = 0; i < 4 ; i = i + 1)begin
         for(j = 0; j < 4; j = j + 1)begin
-            preliminaryLEFT[i][j] <= sandbox[i][3-j];
+            preliminaryLEFT[j][3-i] <= sandbox[i][j];
         end
     end
 /////////////////////////////////////////////
@@ -97,7 +103,7 @@ logic [3:0]preliminaryLEFT[3:0];
     */
     for(i = 0; i < 4 ; i = i + 1)begin
         for(j = 0; j < 4; j = j + 1)begin
-        preliminaryRIGHT[i][j] <= sandbox[3-i][j];
+        preliminaryRIGHT[3-j][i] <= sandbox[i][j];
         end
     end
 
@@ -108,7 +114,7 @@ logic [3:0]preliminaryLEFT[3:0];
     if(State[18])
     begin
         if(~collision[4])
-            sandbox <= preliminaryLEFT;
+            sandbox <= delayedprelLEFT;
     end
 
 
@@ -116,15 +122,14 @@ logic [3:0]preliminaryLEFT[3:0];
     else if(State[16])
     begin
         if(~collision[5])
-            sandbox <= preliminaryRIGHT;
+            sandbox <= delayedprelRIGHT;
     end
-    else
-        sandbox[0] <= 4'b1111;
 /////////////////////////////////////////////
 /////////////////////////////////////////////
     //Clearline check (Sends a signal to the state machine and game board to clear specifed lines.)
     if(State[10])
     begin
+        numberoflines <= 0;
         for(i = 0; i < 30; i = i + 1) begin
             if(interpreted_boarddata[i] == 10'b1111111111) //todo defined in always_comb block below
                 clearlineflags[i] <= 1'b1;
@@ -137,109 +142,142 @@ logic [3:0]preliminaryLEFT[3:0];
     //INSERT PIECE writes piece to board
     if(State[11])
     begin
-        ground_counter = 0;
-        for(i = 0; i < 4; i = i + 1)begin
-            for(j = 0; j < 4; j = j + 1)begin
-                if((i + sandboxUD >= 3) && (j + sandboxLR >= 3) && (i + sandboxUD <= 32) && (i + sandboxLR  <= 12))begin
-                    if(sandbox[i][j])
-                        board_data[i*2+sandboxUD*2][j*2+sandboxLR*2-:2] = ((PIECE_LENGTH % 3) + 1);
-                end
-            end
-        end
+       ground_counter <= 0;
+       for(i = 0; i < 4; i = i + 1)begin
+           for(j = 0; j < 4; j = j + 1)begin
+               if((i + sandboxUD >= 3) && (j + sandboxLR >= 3) && (i + sandboxUD <= 32) && (i + sandboxLR  <= 12))begin
+                   if(sandbox[i][j])
+                       board_data[i + sandboxUD - 3][(j+sandboxLR-3)*2 + 1-:2] <=  ((PIECE_LENGTH % 3) + 1);
+               end
+           end
+       end
     end
 /////////////////////////////////////////////
     //clearline act
     else if(State[9])
     begin
+        numberoflines <= numberoflines + 1;
         if (clearlineflags[0]) begin
             board_data[0] <= 32'h00000000;
+            clearlineflags[0]<= 0;
         end
         else;
         if (clearlineflags[1]) begin 
             board_data[1] <= board_data[0];
+            clearlineflags[1]<= 0;
         end
         else if (clearlineflags[2]) begin
             board_data[2:1] <= board_data[1:0];
+            clearlineflags[2]<= 0;
         end
         else if (clearlineflags[3]) begin
             board_data[3:1] <= board_data[2:0];
+            clearlineflags[3]<= 0;
         end
         else if (clearlineflags[4]) begin
             board_data[4:1] <= board_data[3:0];
+            clearlineflags[4]<= 0;
         end
         else if (clearlineflags[5]) begin
             board_data[5:1] <= board_data[4:0];
+            clearlineflags[5]<= 0;
         end
         else if (clearlineflags[6]) begin
             board_data[6:1] <= board_data[5:0];
+            clearlineflags[6]<= 0;
         end
         else if (clearlineflags[7]) begin
             board_data[7:1] <= board_data[6:0];
+            clearlineflags[7]<= 0;
         end
         else if (clearlineflags[8]) begin
             board_data[8:1] <= board_data[7:0];
+            clearlineflags[8]<= 0;
         end
         else if (clearlineflags[9]) begin
             board_data[9:1] <= board_data[8:0];
+            clearlineflags[9]<= 0;
         end
         else if (clearlineflags[10]) begin
             board_data[10:1] <= board_data[9:0];
+            clearlineflags[10]<= 0;
         end
         else if (clearlineflags[11]) begin
             board_data[11:1] <= board_data[10:0];
+            clearlineflags[11]<= 0;
         end
         else if (clearlineflags[12]) begin
             board_data[12:1] <= board_data[11:0];
+            clearlineflags[12]<= 0;
         end
         else if (clearlineflags[13]) begin
             board_data[13:1] <= board_data[12:0];
+            clearlineflags[13]<= 0;
         end
         else if (clearlineflags[14]) begin
             board_data[14:1] <= board_data[13:0];
+            clearlineflags[14]<= 0;
         end
         else if (clearlineflags[15]) begin
             board_data[15:1] <= board_data[14:0];
+            clearlineflags[15]<= 0;
         end
         else if (clearlineflags[16]) begin
             board_data[16:1] <= board_data[15:0];
+            clearlineflags[16]<= 0;
         end
         else if (clearlineflags[17]) begin
             board_data[17:1] <= board_data[16:0];
+            clearlineflags[17]<= 0;
         end
         else if (clearlineflags[18]) begin
             board_data[18:1] <= board_data[17:0];
+            clearlineflags[18]<= 0;
         end
         else if (clearlineflags[19]) begin
             board_data[19:1] <= board_data[18:0];
+            clearlineflags[19]<= 0;
         end
         else if (clearlineflags[20]) begin
             board_data[20:1] <= board_data[19:0];
+            clearlineflags[20]<= 0;
         end
         else if (clearlineflags[21]) begin
             board_data[21:1] <= board_data[20:0];
+            clearlineflags[21]<= 0;
         end
         else if (clearlineflags[22]) begin
             board_data[22:1] <= board_data[21:0];
+            clearlineflags[22]<= 0;
         end
         else if (clearlineflags[23]) begin
             board_data[23:1] <= board_data[22:0];
+            clearlineflags[23]<= 0;
         end
         else if (clearlineflags[24]) begin
             board_data[24:1] <= board_data[23:0];
+            clearlineflags[24]<= 0;
         end
         else if (clearlineflags[25]) begin
             board_data[25:1] <= board_data[24:0];
+            clearlineflags[25]<= 0;
         end
         else if (clearlineflags[26]) begin
             board_data[26:1] <= board_data[25:0];
+            clearlineflags[26]<= 0;
         end
         else if (clearlineflags[27]) begin
             board_data[27:1] <= board_data[26:0];
+            clearlineflags[27]<= 0;
         end
         else if (clearlineflags[28]) begin
             board_data[28:1] <= board_data[27:0];
+            clearlineflags[28]<= 0;
         end
+		  else if (clearlineflags[29]) begin
             board_data[29:1] <= board_data[28:0];
+            clearlineflags[29]<= 0;
+			end
     end
 /////////////////////////////////////////////
 /////////////////////////////////////////////
@@ -255,7 +293,7 @@ logic [3:0]preliminaryLEFT[3:0];
     //Loads piece from buffer
     if(State[15])
     begin
-        //sandbox <= piece_buffer;
+        sandbox <= piece_buffer;
         sandboxLR <= DEFAULTPOSLR;
         sandboxUD <= DEFAULTPOSUD;
     end
@@ -266,17 +304,18 @@ logic [3:0]preliminaryLEFT[3:0];
     begin
         for(i = 0; i < 4 ; i = i + 1)begin
             for(j = 0; j < 4; j = j + 1)begin
-                preliminaryRIGHT[i][j] <= 0;    
+                preliminaryRIGHT[i][j] <= 0;
                 preliminaryLEFT[i][j] <= 0;
                 holdbox[i][j] <= 0;
             end
         end
-    end
-    for(i = 0; i < 30 ; i = i + 1)begin
-            board_data[i][31:0] <= 0;
+        
+        for(i = 0; i < 30 ; i = i + 1)begin
+                board_data[i][31:0] <= 0;
 		end
     end // end of always_ff
 
+    end
     always_comb begin
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -291,7 +330,7 @@ logic [3:0]preliminaryLEFT[3:0];
     //Endgame: Freezes the Board, sets all collision = 1 to stop movement.
     for (row=0; row < 30; row = row +1) begin
 	    for(bitpair = 0; bitpair < 20; bitpair = bitpair + 2) begin
-		    interpreted_boarddata[row][bitpair/2] = board_data[row][bitpair] || board_data[row][bitpair+1];
+		    interpreted_boarddata[row][bitpair/2] = (board_data[row][bitpair] || board_data[row][bitpair+1]);
 	    end
     end
     ///how we do checking between sandbox and gameboard in vgatext
@@ -303,17 +342,17 @@ logic [3:0]preliminaryLEFT[3:0];
 
     for(i = 0; i < 6 ; i = i + 1)begin
         for(j = 0; j < 6; j = j + 1)begin
-            if((i + sandboxUD >= 3) && (i + sandboxUD <= 32) && (j + sandboxLR >= 3) && (j + sandboxLR >= 12)) begin
-                board_data_slice[i][j] = interpreted_boarddata[i+sandboxUD-3][j+sandboxUD-3];
+            if((i + sandboxUD >= 4) && (i + sandboxUD <= 33) && (j + sandboxLR >= 4) && (j + sandboxLR <= 13)) begin
+                board_data_slice[i][j] = interpreted_boarddata[i+sandboxUD-4][j+sandboxLR-4];
              end
             else begin
                 board_data_slice[i][j] = 1'b1;
              end
-        end
+        end	
     end
     //board data slice check same y but with all x + 1 to account for shifted center of game board data slice
     //Collision Up [0]         
-    //collision[5:0] = 6'b000000;                                                                              //
+		//collision[5:0] = 6'b000000;                                                                              //
         collision[0] =  (sandbox[0][0] && board_data_slice[0][1]) || (sandbox[0][1] && board_data_slice[0][2]) || (sandbox[0][2] && board_data_slice[0][3]) || (sandbox[0][3] && board_data_slice[0][4])
                      || (sandbox[1][0] && board_data_slice[1][1]) || (sandbox[1][1] && board_data_slice[1][2]) || (sandbox[1][2] && board_data_slice[1][3]) || (sandbox[1][3] && board_data_slice[1][4])
                      || (sandbox[2][0] && board_data_slice[2][1]) || (sandbox[2][1] && board_data_slice[2][2]) || (sandbox[2][2] && board_data_slice[2][3]) || (sandbox[2][3] && board_data_slice[2][4])

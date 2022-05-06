@@ -34,7 +34,7 @@ logic [15:0]  FONT_DATA;
 logic VGA_CLK;
 logic blank;
 logic sync; 
-logic [31:0] LOCAL_REG [30];
+logic [31:0] LOCAL_REG [29:0];
 logic [9:0] DrawX, DrawY; // Registers
 //put other local variables here
 logic write;
@@ -78,6 +78,7 @@ vga_controller text_writing_controller_instantiation(
 );
 //SIG_ENDGAME
 //state machine variables
+logic [9:0] score;
 logic [1:0] rotate;
 logic       clearline;
 logic       pieceplaced;
@@ -117,8 +118,8 @@ logic [5:0]collision;
 logic [3:0]sandbox[3:0];
 logic [29:0]clearlineflags;
 logic [3:0]ground_counter;
-
-gameboard_2 game_board(.*,.sandboxLR(SANDBOX_X), .sandboxUD(SANDBOX_Y),
+logic [5:0]numberoflines;
+gameboard_2 game_board(.*,.piece_buffer(piece_buffer),.sandboxLR(SANDBOX_X), .sandboxUD(SANDBOX_Y),
 		.sandbox(sandbox),
 		.board_data(LOCAL_REG),
 		.ROTATELEFT(SIG_ROTATELEFT),
@@ -150,58 +151,19 @@ gameboard_2 game_board(.*,.sandboxLR(SANDBOX_X), .sandboxUD(SANDBOX_Y),
 // assign BGD_REG[3] = 12'h620; //red
 logic [11:0] PIXEL_COLOR;
 logic [2:0]RANDOMIZER;
+logic [3:0]first_addr, second_addr, third_addr, fourth_addr;
 int i;
 int j; 
+scoreToDecimal scoreconverter(.score(score), .first_addr(first_addr), .second_addr(second_addr), .third_addr(third_addr), .fourth_addr(fourth_addr));
 always_ff @(posedge VGA_CLK) begin
-//Background colors
-if(SIG_ENDGAME)begin
-	BKG_B <= 4'b0111;
-	BKG_G <= 4'b0000;
-	BKG_R <= 4'b0111;
-end
-else if(SIG_MOVELEFT)begin
-	BKG_B <= 4'b0000;
-	BKG_G <= 4'b1111;
-	BKG_R <= 4'b0000;
-end
-else if(SIG_MOVERIGHT)begin
-	BKG_B <= 4'b0000;
-	BKG_G <= 4'b0000;
-	BKG_R <= 4'b1111;
-end
-else if(SIG_FALL)begin
-	BKG_B <= 4'b1111;
-	BKG_G <= 4'b1111;
-	BKG_R <= 4'b1111;
-end
-else if(SIG_CLEARLINE)begin
-	BKG_B <= 4'b1111;
-	BKG_G <= 4'b1111;
-	BKG_R <= 4'b0000;
-end
-else if(SIG_LOADPIECE)begin
-	BKG_B <= 4'b0111;
-	BKG_G <= 4'b0111;
-	BKG_R <= 4'b1111;
-end
-else if(SIG_PIECEPLACED)begin
-	BKG_B <= 4'b0111;
-	BKG_G <= 4'b0111;
-	BKG_R <= 4'b1111;
-end
-else
-begin
-	BKG_B <= PIXEL_COLOR[3:0];
-	BKG_G <= PIXEL_COLOR[7:4];
-	BKG_R <= PIXEL_COLOR[11:8];
-end
+//score
+if(SIG_CLEARALL)
+	score = 0;
+if(SIG_LOADPIECE)
+	score = score + numberoflines * (2**LEVEL)*4;
+
 //piece buffer
 
-for(i = 0; i < 4; i = i + 1)begin
-	for(j = 0; j < 4; j = j + 1)begin
-		piece_buffer[i][j] <= 1'b1;
-	end
-end
 //board
 	if ((DrawX > 240) && (DrawX < 400)) begin
 		if (blank) begin
@@ -324,19 +286,19 @@ logic [11:0] COLOR_0, COLOR_1, COLOR_2, COLOR_3;
  //sandbox variables
 logic [4:0] SANDBOX_X;
 logic [5:0] SANDBOX_Y;
-logic [4:0] PIECE_LENGTH;
+logic [3:0] PIECE_LENGTH;
 logic [1:0] PIECE_STYLE;
 logic [7:0] ScoreX, ScoreY;
 logic FONT_PIXEL;
 logic [3:0] SCOREPOS_X, SCOREPOS_Y;
-logic [7:0] CHAR_DATA;
+logic [3:0] CHAR_DATA;
 logic [5:0] CHAR_ADDR;
 logic [4:0] VGA_ADDR;
 logic [8:0] BoardX, BoardY;
 logic [4:0] REGPOS_X, REGPOS_Y;
 logic [2:0] LEVEL;
+logic [1:0] filtered_piece_style;
 //TODO: test case
-assign PIECE_LENGTH = 2'b1;
 assign LEVEL = 3'b001;
 
 
@@ -345,15 +307,23 @@ assign BoardX = DrawX - 240;
 assign BoardY = DrawY;
 
 always_comb begin
+//bkg clr
+BKG_R = COLOR_0[11]&random_noise[DrawX + random_noise[DrawY + 3]]&COLOR_0[11:8];
+BKG_G	= COLOR_0[7]&random_noise[DrawX + random_noise[DrawY + 1]]&COLOR_0[7:4];
+BKG_B = COLOR_0[3]&random_noise[DrawX + random_noise[DrawY + 7]]&COLOR_0[3:0];
 //reading data from a 32 bit
     PIXEL_VAL = SPRITE_DATA[(31-{BoardX[3:0],1'b0})-:2];
     SPRITE_ADDR = {VGA_DATA[(REGPOS_X*2+1)-:2], BoardY[3:0]};
     REGPOS_Y = BoardY[8:4];
     REGPOS_X = BoardX[8:4];
-   	PIECE_STYLE = ((PIECE_LENGTH % 3) + 1)&sandbox[REGPOS_X - SANDBOX_X+3][REGPOS_Y - SANDBOX_Y+3];
-
-if ((REGPOS_X + 3>= SANDBOX_X ) && (REGPOS_X  <= SANDBOX_X ) && (REGPOS_Y + 3 >= SANDBOX_Y) && (REGPOS_Y <= SANDBOX_Y)) begin
-	VGA_DATA = {PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE, PIECE_STYLE};
+    PIECE_STYLE = ((PIECE_LENGTH % 3) + 1);
+	 filtered_piece_style = {PIECE_STYLE[0]&(sandbox[REGPOS_Y - SANDBOX_Y+3][REGPOS_X - SANDBOX_X+3]),PIECE_STYLE[1]&(sandbox[REGPOS_Y - SANDBOX_Y+3][REGPOS_X - SANDBOX_X+3])};
+piece_buffer[0] = 4'b1000;
+piece_buffer[1] = 4'b0100;
+piece_buffer[2] = 4'b1010;
+piece_buffer[3] = 4'b1101;
+if ((REGPOS_X + 3>= SANDBOX_X ) && (REGPOS_X  <= SANDBOX_X ) && (REGPOS_Y + 3 >= SANDBOX_Y) && (REGPOS_Y <= SANDBOX_Y) && sandbox[REGPOS_Y - SANDBOX_Y + 3][REGPOS_X - SANDBOX_X + 3]) begin
+	VGA_DATA = {filtered_piece_style, filtered_piece_style, filtered_piece_style, filtered_piece_style, filtered_piece_style, filtered_piece_style, filtered_piece_style, filtered_piece_style, filtered_piece_style, filtered_piece_style};
 end
 else begin
     VGA_DATA = LOCAL_REG[REGPOS_Y][19:0];
@@ -378,8 +348,24 @@ SCOREPOS_Y = ScoreY[7:4];
 CHAR_ADDR = SCOREPOS_Y*7+SCOREPOS_X;
 FONT_ADDR = {CHAR_DATA, ScoreY[3:0]};
 FONT_PIXEL = FONT_DATA[15-ScoreX[3:0]];
-end
 
+if(SCOREPOS_Y == 3)begin
+	if(SCOREPOS_X == 2)
+		CHAR_DATA = first_addr;
+	else if(SCOREPOS_X == 3)
+		CHAR_DATA = second_addr;
+	else if (SCOREPOS_X == 4) 
+		CHAR_DATA = third_addr;
+	else if (SCOREPOS_X == 5 )
+		CHAR_DATA = fourth_addr;
+	else
+		CHAR_DATA = CHARDATAOUT;
+end
+else begin
+	CHAR_DATA = CHARDATAOUT;
+end
+end
+logic [7:0]CHARDATAOUT;
 
 // PIXEL_VAL = SPRITE_DATA[(31-{BoardX[3:0],1'b0})-:2];
 // SPRITE_ADDR = {VGA_DATA[(REGPOS_X*2+1)-:2], BoardY[3:0]};
@@ -392,7 +378,7 @@ drawing(.SPRITE_ADDR(SPRITE_ADDR), .SPRITE_DATA(SPRITE_DATA));
 
 palette level_colors(.LEVEL(LEVEL), .COLOR_0(COLOR_0), .COLOR_1(COLOR_1), .COLOR_2(COLOR_2), .COLOR_3(COLOR_3)); //TODO: fill in the level
 
-score_reg char_code(.CHAR_ADDR(CHAR_ADDR), .CHAR_DATA(CHAR_DATA));
+score_reg char_code(.CHAR_ADDR(CHAR_ADDR), .CHAR_DATA(CHARDATAOUT));
 
 font_rom(.FONT_ADDR(FONT_ADDR), .FONT_DATA(FONT_DATA));
 	

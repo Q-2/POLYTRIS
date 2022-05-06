@@ -46,7 +46,7 @@ module statemachine (
           parameter CLEARALL_KEYCODE = 8'h13;
 
 assign State_out = State;
-	 
+		
 		
 //clock for falling pieces
 logic drop;
@@ -58,15 +58,58 @@ clk_two_electric_boogaloo game_clock(
 	.level(LEVEL),
 	.piece_clk(piece_clk)
 );
+logic moveleftreg, moverightreg, moveupreg, movedownreg, rotateleftreg, rotaterightreg;
+logic moveleftkey, moverightkey, moveupkey, movedownkey, rotateleftkey, rotaterightkey;
+logic dlayleftkey, dlayrightkey, dlayupkey, dlaydownkey, delayrleftkey, delayrrightkey;
+	
 
+	always_ff @ (posedge CLK)begin
+	moveleftkey <= (keyboardinput == LEFT_KEYCODE);
+	moverightkey <= (keyboardinput == RIGHT_KEYCODE);
+	moveupkey <= (keyboardinput == KONAMI_KEYCODE);
+	movedownkey <= (piece_clk);
+	rotateleftkey <= (keyboardinput == LEFT_ROTATE_KEYCODE);
+	rotaterightkey <= (keyboardinput == RIGHT_ROTATE_KEYCODE);
+	dlayleftkey <= moveleftkey;
+	dlayrightkey <= moverightkey;
+	dlaydownkey <= movedownkey;
+	dlayupkey <= moveupkey;
+	delayrleftkey <= rotateleftkey;
+	delayrrightkey <= rotaterightkey;
+	if((moveleftkey != dlayleftkey) & (moveleftkey == 1'b1))
+		moveleftreg <= 1;
+	else if(SIG_MOVELEFT)
+		moveleftreg <= 0;
+		
+		
+	if((moverightkey != dlayrightkey) & (moverightkey == 1'b1)) 
+		moverightreg <= 1;
+	else if(SIG_MOVERIGHT)
+		moverightreg <= 0;
+		
+		
+	if((moveupkey != dlayupkey) & (moveupkey == 1'b1)) 
+		moveupreg <= 1;
+	else if(SIG_KONAMI)
+		moveupreg <= 0;
+		
+	if((movedownkey != dlaydownkey) & (movedownkey == 1'b1))
+		movedownreg <= 1;
+	else if(SIG_FALL)
+		movedownreg <= 0;
+		
+	if((rotateleftkey != delayrleftkey) & (rotateleftkey == 1'b1))
+		rotateleftreg <= 1;
+	else if(SIG_MOVELEFT)
+		rotateleftreg <= 0;	
+		
+		
+	if((rotaterightkey != delayrrightkey) & (rotaterightkey == 1'b1))
+		rotaterightreg <= 1;
+	else if(SIG_MOVELEFT)
+		rotaterightreg <= 0;	
+	end
 
-
-    always_ff @ (posedge CLK) begin
-        if(~SIG_FALL & piece_clk)
-            piececlkreg = 1'b1;
-        else
-            piececlkreg = 1'b0;
-    end
     logic       piececlkreg;
     logic [3:0] keyreg;
     enum logic [4:0]{
@@ -151,22 +194,22 @@ clk_two_electric_boogaloo game_clock(
                 if (ground_counter == 4'b1111) begin
                 Next_state = S_PIECE_INSERT;
                 end
-                else if(keyboardinput == KONAMI_KEYCODE)begin
+                else if(moveupreg)begin
                 Next_state = S_KONAMI;
                 end
-                else if(piececlkreg)begin
+                else if(movedownreg)begin
                 Next_state = S_FALL;               
                 end
-                else if(keyboardinput == LEFT_KEYCODE)begin
+                else if(moveleftreg)begin
                 Next_state = S_MOVELEFT;
                 end
-                else if(keyboardinput == RIGHT_KEYCODE)begin
+                else if(moverightreg)begin
                 Next_state = S_MOVERIGHT;
                 end
-                else if(keyboardinput == LEFT_ROTATE_KEYCODE)begin
+                else if(rotateleftreg)begin
                 Next_state = S_ROTATELEFT_1;
                 end
-                else if(keyboardinput == RIGHT_ROTATE_KEYCODE)begin
+                else if(rotaterightreg)begin
                 Next_state = S_ROTATERIGHT_1;
                 end
                 else if(keyboardinput == HOLDPIECE_KEYCODE)begin
@@ -180,11 +223,11 @@ clk_two_electric_boogaloo game_clock(
             S_PIECEPLACED : //Todo need to write sandbox to gameboard
                 Next_state = S_CLEARLINECHECK;
             S_ROTATELEFT_1 :
-                Next_state = S_STALL;
+                Next_state = S_ROTATELEFT_2;
             S_ROTATELEFT_2 :
                 Next_state = S_STALL;
             S_ROTATERIGHT_1 :
-                Next_state = S_STALL;
+                Next_state = S_ROTATERIGHT_2;
             S_ROTATERIGHT_2 :
                 Next_state = S_STALL;
             S_FALL :
@@ -244,14 +287,18 @@ clk_two_electric_boogaloo game_clock(
 		  case (State)
             S_PIECEPLACED : //Todo need to write sandbox to gameboard
                 SIG_PIECEPLACED = 1'b1;
-            S_ROTATELEFT_1 :
+            S_ROTATELEFT_1 : begin
                 SIG_ROTATELEFT = 1'b1;
+					 SIG_MOVELEFT = 1'b1;
+					 end
             S_ROTATELEFT_2 :
-                SIG_ROTATELEFT_2 = 1'b1;
-            S_ROTATERIGHT_1 :
+                SIG_MOVERIGHT = 1'b1;
+            S_ROTATERIGHT_1 : begin
                 SIG_ROTATERIGHT = 1'b1;
+					 SIG_MOVELEFT = 1'b1;
+					 end
             S_ROTATERIGHT_2 :
-                SIG_ROTATERIGHT_2 = 1'b1;
+                SIG_MOVERIGHT = 1'b1;
             S_FALL :
                 SIG_FALL = 1'b1;
             S_FALL_2 :

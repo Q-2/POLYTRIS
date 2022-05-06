@@ -133,6 +133,7 @@ void setKeycode(WORD keycode)
 	IOWR_ALTERA_AVALON_PIO_DATA(KEYCODE_BASE, keycode);
 }
 int main() {
+	srand(NULL);
 	BYTE rcode;
 	BOOT_MOUSE_REPORT buf;		//USB mouse report
 	BOOT_KBD_REPORT kbdbuf;
@@ -143,12 +144,13 @@ int main() {
 	WORD keycode;
 
 	volatile unsigned int *generate_flag_ptr = (unsigned int*)0x130; //pointer to access PIO block
-
+	volatile unsigned int *random_noise_ptr = (unsigned int*)0x180;
 	printf("initializing MAX3421E...\n");
 	MAX3421E_init();
 	printf("initializing USB...\n");
 	USB_init();
 	while (1) {
+		*random_noise_ptr = rand();
 		printf(".");
 		MAX3421E_Task();
 		USB_Task();
