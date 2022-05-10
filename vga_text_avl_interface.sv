@@ -43,7 +43,6 @@ logic [1:0] PIXEL_VAL;
 logic [19:0] VGA_DATA;
 logic [3:0] LENGTH; 
 
-assign generator_flag = State_out;
 
 //Declare submodules..e.g. VGA controller, ROMS, etc
 
@@ -86,7 +85,7 @@ logic       placepiece;
 logic       ground_notif;
 logic [5:0] clearlineval;
 logic       piece_clk;
-logic   SIG_FALL, //TODO: ADD SIGNALS TO GAMEBOARD
+logic   SIG_FALL, 
 		SIG_MOVELEFT,
 		SIG_MOVERIGHT,
 		SIG_KONAMI,
@@ -160,8 +159,15 @@ always_ff @(posedge VGA_CLK) begin
 if(SIG_CLEARALL)
 	score = 0;
 if(SIG_LOADPIECE)
-	score = score + numberoflines * (2**LEVEL)*4;
-
+	score = score + numberoflines * (LEVEL+1) * 8;
+if (score >= 128 && score < 256)  LEVEL = 3'b001;
+else if ((score >= 256) && (score < 384))  LEVEL = 3'b010;
+else if ((score >= 384) && (score < 512))  LEVEL = 3'b011;
+else if ((score >= 512) && (score < 640))  LEVEL = 3'b100;
+else if ((score >= 640) && (score < 768))  LEVEL = 3'b101;
+else if ((score >= 768) && (score < 896))  LEVEL = 3'b110;
+else if ((score >= 896) && (score < 1024))  LEVEL = 3'b111;
+else LEVEL = 3'b000;
 //piece buffer
 
 //board
@@ -223,19 +229,6 @@ if(SIG_LOADPIECE)
 			blue = 4'b0000;
 		end
  	end
- //stats box
- 	else if (((DrawX > 62) && (DrawX < 192)) && ((DrawY > 128) && (DrawY < 432))) begin
-		if (blank) begin
-			red = 4'h0;
-			blue = 4'h0;
-			green = 4'h0;
-		end
-		else begin
-			red = 4'b0000;
-			green = 4'b0000;
-			blue = 4'b0000;
-		end
- 	end
 //the rest of the background
 	else begin
 		if (blank) begin
@@ -250,7 +243,7 @@ if(SIG_LOADPIECE)
 		end
 	end
 //next piece border
-	if (((DrawX > 424) && (DrawX < 504)) && ((DrawY > 184) && (DrawY < 280))) begin
+	if (((DrawX > 424) && (DrawX < 536)) && ((DrawY > 184) && (DrawY < 296))) begin
 		if (blank) begin
 			red = 4'hc;
 			blue = 4'hf;
@@ -264,11 +257,11 @@ if(SIG_LOADPIECE)
 	end
 	else;
 //next piece box
-	if (((DrawX > 432) && (DrawX < 496)) && ((DrawY > 192) && (DrawY < 272))) begin
+	if (((DrawX > 432) && (DrawX < 528)) && ((DrawY > 192) && (DrawY < 288))) begin
 		if (blank) begin
-			red = 4'h0;
-			blue = 4'h0;
-			green = 4'h0;
+			red = NEXT_COLOR[11:8];
+			green = NEXT_COLOR[7:4];
+			blue = NEXT_COLOR[3:0];
 		end
 		else begin
 			red = 4'b0000;
@@ -298,8 +291,6 @@ logic [8:0] BoardX, BoardY;
 logic [4:0] REGPOS_X, REGPOS_Y;
 logic [2:0] LEVEL;
 logic [1:0] filtered_piece_style;
-//TODO: test case
-assign LEVEL = 3'b001;
 
 
 //obtain board position
@@ -307,10 +298,20 @@ assign BoardX = DrawX - 240;
 assign BoardY = DrawY;
 
 always_comb begin
+if( SIG_ENDGAME || SIG_CLEARLINECHECK) 
+	generator_flag = 16'hffff;
+else
+	generator_flag = 16'h0000;
 //bkg clr
-BKG_R = COLOR_0[11]&random_noise[DrawX + random_noise[DrawY + 3]]&COLOR_0[11:8];
-BKG_G	= COLOR_0[7]&random_noise[DrawX + random_noise[DrawY + 1]]&COLOR_0[7:4];
-BKG_B = COLOR_0[3]&random_noise[DrawX + random_noise[DrawY + 7]]&COLOR_0[3:0];
+for(i = 0; i < 4; i = i+1) begin
+	for(j = 0; j < 4; j = j + 1)begin
+		piece_buffer[i][j] = game_piece[i*4 + j];
+	end
+end
+
+BKG_R = {1'b1, (COLOR_0[11]&random_noise[DrawX + random_noise[DrawY + 3]]&COLOR_0[11:8]),(COLOR_0[11]&random_noise[DrawX + random_noise[DrawY + 1]]&COLOR_0[11:8]),1'b1};
+BKG_G = {1'b1, (COLOR_0[7]&random_noise[DrawX + random_noise[DrawY + 1]]&COLOR_0[7:4]),(COLOR_0[7]&random_noise[DrawX + random_noise[DrawY + 6]]&COLOR_0[7:4]),1'b1};
+BKG_B = {1'b1, (COLOR_0[3]&random_noise[DrawX + random_noise[DrawY + 7]]&COLOR_0[3:0]),(COLOR_0[3]&random_noise[DrawX + random_noise[DrawY + 11]]&COLOR_0[3:0]),1'b1};
 //reading data from a 32 bit
     PIXEL_VAL = SPRITE_DATA[(31-{BoardX[3:0],1'b0})-:2];
     SPRITE_ADDR = {VGA_DATA[(REGPOS_X*2+1)-:2], BoardY[3:0]};
@@ -318,10 +319,7 @@ BKG_B = COLOR_0[3]&random_noise[DrawX + random_noise[DrawY + 7]]&COLOR_0[3:0];
     REGPOS_X = BoardX[8:4];
     PIECE_STYLE = ((PIECE_LENGTH % 3) + 1);
 	 filtered_piece_style = {PIECE_STYLE[0]&(sandbox[REGPOS_Y - SANDBOX_Y+3][REGPOS_X - SANDBOX_X+3]),PIECE_STYLE[1]&(sandbox[REGPOS_Y - SANDBOX_Y+3][REGPOS_X - SANDBOX_X+3])};
-piece_buffer[0] = 4'b1000;
-piece_buffer[1] = 4'b0100;
-piece_buffer[2] = 4'b1010;
-piece_buffer[3] = 4'b1101;
+
 if ((REGPOS_X + 3>= SANDBOX_X ) && (REGPOS_X  <= SANDBOX_X ) && (REGPOS_Y + 3 >= SANDBOX_Y) && (REGPOS_Y <= SANDBOX_Y) && sandbox[REGPOS_Y - SANDBOX_Y + 3][REGPOS_X - SANDBOX_X + 3]) begin
 	VGA_DATA = {filtered_piece_style, filtered_piece_style, filtered_piece_style, filtered_piece_style, filtered_piece_style, filtered_piece_style, filtered_piece_style, filtered_piece_style, filtered_piece_style, filtered_piece_style};
 end
@@ -348,37 +346,49 @@ SCOREPOS_Y = ScoreY[7:4];
 CHAR_ADDR = SCOREPOS_Y*7+SCOREPOS_X;
 FONT_ADDR = {CHAR_DATA, ScoreY[3:0]};
 FONT_PIXEL = FONT_DATA[15-ScoreX[3:0]];
+end
 
-if(SCOREPOS_Y == 3)begin
-	if(SCOREPOS_X == 2)
-		CHAR_DATA = first_addr;
-	else if(SCOREPOS_X == 3)
-		CHAR_DATA = second_addr;
-	else if (SCOREPOS_X == 4) 
-		CHAR_DATA = third_addr;
-	else if (SCOREPOS_X == 5 )
-		CHAR_DATA = fourth_addr;
-	else
-		CHAR_DATA = CHARDATAOUT;
+//next piece printing
+logic [1:0] NEXTPOS_X, NEXTPOS_Y;
+logic [7:0] Next_X, Next_Y;
+logic [1:0] NEXT_VAL;
+logic [11:0] NEXT_COLOR;
+logic [5:0] NEXT_ADDR;
+logic [31:0] NEXT_DATA;
+always_comb begin
+Next_X = DrawX - 448;
+Next_Y = DrawY - 208;
+NEXTPOS_X = Next_X[7:4];
+NEXTPOS_Y = Next_Y[7:4];
+if ((Next_X >= 0) && (Next_X < 64) && (Next_Y >= 0) && (Next_Y < 64)) begin
+	if (piece_buffer[NEXTPOS_Y][NEXTPOS_X]) begin
+		NEXT_ADDR = {2'b11, Next_Y[3:0]};
+	end
+	else begin
+		NEXT_ADDR = {2'b00, Next_Y[3:0]};
+	end
 end
-else begin
-	CHAR_DATA = CHARDATAOUT;
-end
-end
-logic [7:0]CHARDATAOUT;
+else NEXT_ADDR = {6'b000000};
+NEXT_VAL = NEXT_DATA[(31-{Next_X[3:0],1'b0})-:2];
 
-// PIXEL_VAL = SPRITE_DATA[(31-{BoardX[3:0],1'b0})-:2];
-// SPRITE_ADDR = {VGA_DATA[(REGPOS_X*2+1)-:2], BoardY[3:0]};
-// REGPOS_Y = BoardY[8:4];
-// REGPOS_X = BoardX[8:4];
-// PIECE_STYLE = (PIECE_LENGTH % 3) + 1;
+case (NEXT_VAL)
+    2'b00: NEXT_COLOR = COLOR_0; //accent 1
+    2'b01: NEXT_COLOR = COLOR_1; //accent 2
+    2'b10: NEXT_COLOR = COLOR_2; //black
+    default: NEXT_COLOR = COLOR_3; //white
+endcase
+end //always_comb end
+
+//	if (((DrawX > 432) && (DrawX < 528)) && ((DrawY > 192) && (DrawY < 288))) begin
 
 
 drawing(.SPRITE_ADDR(SPRITE_ADDR), .SPRITE_DATA(SPRITE_DATA));
 
-palette level_colors(.LEVEL(LEVEL), .COLOR_0(COLOR_0), .COLOR_1(COLOR_1), .COLOR_2(COLOR_2), .COLOR_3(COLOR_3)); //TODO: fill in the level
+drawing next_piece(.SPRITE_ADDR(NEXT_ADDR), .SPRITE_DATA(NEXT_DATA));
 
-score_reg char_code(.CHAR_ADDR(CHAR_ADDR), .CHAR_DATA(CHARDATAOUT));
+palette level_colors(.LEVEL(LEVEL), .COLOR_0(COLOR_0), .COLOR_1(COLOR_1), .COLOR_2(COLOR_2), .COLOR_3(COLOR_3)); 
+
+score_reg char_code(.*, .CHAR_ADDR(CHAR_ADDR), .CHAR_DATA(CHAR_DATA));
 
 font_rom(.FONT_ADDR(FONT_ADDR), .FONT_DATA(FONT_DATA));
 	

@@ -1,5 +1,5 @@
 module font_rom ( input [7:0]	FONT_ADDR,
-		  output [8:0]	FONT_DATA
+		  output [7:0]	FONT_DATA
 		);
 
 	parameter ADDR_WIDTH = 8;

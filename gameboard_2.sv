@@ -156,127 +156,156 @@ logic [3:0]delayedprelRIGHT[3:0];
     //clearline act
     else if(State[9])
     begin
-        numberoflines <= numberoflines + 1;
         if (clearlineflags[0]) begin
             board_data[0] <= 32'h00000000;
             clearlineflags[0]<= 0;
+            numberoflines <= numberoflines + 1;
         end
         else;
         if (clearlineflags[1]) begin 
             board_data[1] <= board_data[0];
             clearlineflags[1]<= 0;
+            numberoflines <= numberoflines + 1;
         end
         else if (clearlineflags[2]) begin
             board_data[2:1] <= board_data[1:0];
             clearlineflags[2]<= 0;
+            numberoflines <= numberoflines + 1;
         end
         else if (clearlineflags[3]) begin
             board_data[3:1] <= board_data[2:0];
             clearlineflags[3]<= 0;
+            numberoflines <= numberoflines + 1;
         end
         else if (clearlineflags[4]) begin
             board_data[4:1] <= board_data[3:0];
             clearlineflags[4]<= 0;
+            numberoflines <= numberoflines + 1;
         end
         else if (clearlineflags[5]) begin
             board_data[5:1] <= board_data[4:0];
             clearlineflags[5]<= 0;
+            numberoflines <= numberoflines + 1;
         end
         else if (clearlineflags[6]) begin
             board_data[6:1] <= board_data[5:0];
             clearlineflags[6]<= 0;
+            numberoflines <= numberoflines + 1;
         end
         else if (clearlineflags[7]) begin
             board_data[7:1] <= board_data[6:0];
             clearlineflags[7]<= 0;
+            numberoflines <= numberoflines + 1;
         end
         else if (clearlineflags[8]) begin
             board_data[8:1] <= board_data[7:0];
             clearlineflags[8]<= 0;
+            numberoflines <= numberoflines + 1;
         end
         else if (clearlineflags[9]) begin
             board_data[9:1] <= board_data[8:0];
             clearlineflags[9]<= 0;
+            numberoflines <= numberoflines + 1;
         end
         else if (clearlineflags[10]) begin
             board_data[10:1] <= board_data[9:0];
             clearlineflags[10]<= 0;
+            numberoflines <= numberoflines + 1;
         end
         else if (clearlineflags[11]) begin
             board_data[11:1] <= board_data[10:0];
             clearlineflags[11]<= 0;
+            numberoflines <= numberoflines + 1;
         end
         else if (clearlineflags[12]) begin
             board_data[12:1] <= board_data[11:0];
             clearlineflags[12]<= 0;
+            numberoflines <= numberoflines + 1;
         end
         else if (clearlineflags[13]) begin
             board_data[13:1] <= board_data[12:0];
             clearlineflags[13]<= 0;
+            numberoflines <= numberoflines + 1;
         end
         else if (clearlineflags[14]) begin
             board_data[14:1] <= board_data[13:0];
             clearlineflags[14]<= 0;
+            numberoflines <= numberoflines + 1;
         end
         else if (clearlineflags[15]) begin
             board_data[15:1] <= board_data[14:0];
             clearlineflags[15]<= 0;
+            numberoflines <= numberoflines + 1;
         end
         else if (clearlineflags[16]) begin
             board_data[16:1] <= board_data[15:0];
             clearlineflags[16]<= 0;
+            numberoflines <= numberoflines + 1;
         end
         else if (clearlineflags[17]) begin
             board_data[17:1] <= board_data[16:0];
             clearlineflags[17]<= 0;
+            numberoflines <= numberoflines + 1;
         end
         else if (clearlineflags[18]) begin
             board_data[18:1] <= board_data[17:0];
             clearlineflags[18]<= 0;
+            numberoflines <= numberoflines + 1;
         end
         else if (clearlineflags[19]) begin
             board_data[19:1] <= board_data[18:0];
             clearlineflags[19]<= 0;
+            numberoflines <= numberoflines + 1;
         end
         else if (clearlineflags[20]) begin
             board_data[20:1] <= board_data[19:0];
             clearlineflags[20]<= 0;
+            numberoflines <= numberoflines + 1;
         end
         else if (clearlineflags[21]) begin
             board_data[21:1] <= board_data[20:0];
             clearlineflags[21]<= 0;
+            numberoflines <= numberoflines + 1;
         end
         else if (clearlineflags[22]) begin
             board_data[22:1] <= board_data[21:0];
             clearlineflags[22]<= 0;
+            numberoflines <= numberoflines + 1;
         end
         else if (clearlineflags[23]) begin
             board_data[23:1] <= board_data[22:0];
             clearlineflags[23]<= 0;
+            numberoflines <= numberoflines + 1;
         end
         else if (clearlineflags[24]) begin
             board_data[24:1] <= board_data[23:0];
             clearlineflags[24]<= 0;
+            numberoflines <= numberoflines + 1;
         end
         else if (clearlineflags[25]) begin
             board_data[25:1] <= board_data[24:0];
             clearlineflags[25]<= 0;
+            numberoflines <= numberoflines + 1;
         end
         else if (clearlineflags[26]) begin
             board_data[26:1] <= board_data[25:0];
             clearlineflags[26]<= 0;
+            numberoflines <= numberoflines + 1;
         end
         else if (clearlineflags[27]) begin
             board_data[27:1] <= board_data[26:0];
             clearlineflags[27]<= 0;
+            numberoflines <= numberoflines + 1;
         end
         else if (clearlineflags[28]) begin
             board_data[28:1] <= board_data[27:0];
             clearlineflags[28]<= 0;
+            numberoflines <= numberoflines + 1;
         end
 		  else if (clearlineflags[29]) begin
             board_data[29:1] <= board_data[28:0];
             clearlineflags[29]<= 0;
+            numberoflines <= numberoflines + 1;
 			end
     end
 /////////////////////////////////////////////
@@ -356,7 +385,7 @@ logic [3:0]delayedprelRIGHT[3:0];
         collision[0] =  (sandbox[0][0] && board_data_slice[0][1]) || (sandbox[0][1] && board_data_slice[0][2]) || (sandbox[0][2] && board_data_slice[0][3]) || (sandbox[0][3] && board_data_slice[0][4])
                      || (sandbox[1][0] && board_data_slice[1][1]) || (sandbox[1][1] && board_data_slice[1][2]) || (sandbox[1][2] && board_data_slice[1][3]) || (sandbox[1][3] && board_data_slice[1][4])
                      || (sandbox[2][0] && board_data_slice[2][1]) || (sandbox[2][1] && board_data_slice[2][2]) || (sandbox[2][2] && board_data_slice[2][3]) || (sandbox[2][3] && board_data_slice[2][4])
-                     || (sandbox[3][0] && board_data_slice[3][1]) || (sandbox[3][1] && board_data_slice[3][2]) || (sandbox[3][2] && board_data_slice[3][3]) || (sandbox[3][3] && board_data_slice[3][4])  || ENDGAME || (sandboxUD == 3);
+                     || (sandbox[3][0] && board_data_slice[3][1]) || (sandbox[3][1] && board_data_slice[3][2]) || (sandbox[3][2] && board_data_slice[3][3]) || (sandbox[3][3] && board_data_slice[3][4])  || ENDGAME || (sandboxUD == 0);
     //Collision Down[1] x + 1 and y + 2
         collision[1] =  (sandbox[0][0] && board_data_slice[2][1]) || (sandbox[0][1] && board_data_slice[2][2]) || (sandbox[0][2] && board_data_slice[2][3]) || (sandbox[0][3] && board_data_slice[2][4])
                      || (sandbox[1][0] && board_data_slice[3][1]) || (sandbox[1][1] && board_data_slice[3][2]) || (sandbox[1][2] && board_data_slice[3][3]) || (sandbox[1][3] && board_data_slice[3][4])
@@ -367,7 +396,7 @@ logic [3:0]delayedprelRIGHT[3:0];
         collision[2] =  (sandbox[0][0] && board_data_slice[1][0]) || (sandbox[0][1] && board_data_slice[1][1]) || (sandbox[0][2] && board_data_slice[1][2]) || (sandbox[0][3] && board_data_slice[1][3])
                      || (sandbox[1][0] && board_data_slice[2][0]) || (sandbox[1][1] && board_data_slice[2][1]) || (sandbox[1][2] && board_data_slice[2][2]) || (sandbox[1][3] && board_data_slice[2][3])
                      || (sandbox[2][0] && board_data_slice[3][0]) || (sandbox[2][1] && board_data_slice[3][1]) || (sandbox[2][2] && board_data_slice[3][2]) || (sandbox[2][3] && board_data_slice[3][3])
-                     || (sandbox[3][0] && board_data_slice[4][0]) || (sandbox[3][1] && board_data_slice[4][1]) || (sandbox[3][2] && board_data_slice[4][2]) || (sandbox[3][3] && board_data_slice[4][3])  || ENDGAME || (sandboxLR == 3);
+                     || (sandbox[3][0] && board_data_slice[4][0]) || (sandbox[3][1] && board_data_slice[4][1]) || (sandbox[3][2] && board_data_slice[4][2]) || (sandbox[3][3] && board_data_slice[4][3])  || ENDGAME || (sandboxLR == 0);
 
     //Collision Right[3] x + 2 and y + 1
         collision[3] =  (sandbox[0][0] && board_data_slice[1][2]) || (sandbox[0][1] && board_data_slice[1][3]) || (sandbox[0][2] && board_data_slice[1][4]) || (sandbox[0][3] && board_data_slice[1][5])

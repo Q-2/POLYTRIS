@@ -10,6 +10,7 @@ module statemachine (
 	input logic		   RESET,
     input logic [29:0] clearlineflags,
     input logic [3:0] ground_counter,
+    input logic [5:0] collision,
 
     output logic       SIG_FALL,
                        SIG_MOVELEFT,
@@ -31,21 +32,20 @@ module statemachine (
                        SIG_ENDGAME, //TODO: ADDED BY CONNIE
                        SIG_LOGO, //TODO: ADDED BY CONNIE
 					   SIG_LOADPIECE,
-    output  logic       piece_clk,
-    output logic [4:0] State_out
+    output  logic       piece_clk
 
                        
 );
-		  parameter KONAMI_KEYCODE = 8'h1a; 
+		  parameter KONAMI_KEYCODE = 8'h18; 
 		  parameter LEFT_KEYCODE = 8'h04;
 		  parameter RIGHT_KEYCODE = 8'h07;
 		  parameter LEFT_ROTATE_KEYCODE = 8'h14;
-		  parameter RIGHT_ROTATE_KEYCODE = 8'h08;
-          parameter SOFT_DROP_KEYCODE = 8'h18;
+		  parameter RIGHT_ROTATE_KEYCODE = 8'h1a;
+          parameter SOFT_DROP_KEYCODE = 8'h16;
           parameter HOLDPIECE_KEYCODE = 8'h0f;
           parameter CLEARALL_KEYCODE = 8'h13;
+          parameter HARD_DROP_KEYCODE = 8'h2c;
 
-assign State_out = State;
 		
 		
 //clock for falling pieces
@@ -55,12 +55,14 @@ clk_two_electric_boogaloo game_clock(
 	.CLK(CLK),
 	.RESET(RESET),
 	.drop(drop),
+    .hard_drop(harddropreg),
 	.level(LEVEL),
 	.piece_clk(piece_clk)
 );
 logic moveleftreg, moverightreg, moveupreg, movedownreg, rotateleftreg, rotaterightreg;
 logic moveleftkey, moverightkey, moveupkey, movedownkey, rotateleftkey, rotaterightkey;
 logic dlayleftkey, dlayrightkey, dlayupkey, dlaydownkey, delayrleftkey, delayrrightkey;
+logic harddropreg, harddropkey, dlayharddrop;
 	
 
 	always_ff @ (posedge CLK)begin
@@ -70,23 +72,29 @@ logic dlayleftkey, dlayrightkey, dlayupkey, dlaydownkey, delayrleftkey, delayrri
 	movedownkey <= (piece_clk);
 	rotateleftkey <= (keyboardinput == LEFT_ROTATE_KEYCODE);
 	rotaterightkey <= (keyboardinput == RIGHT_ROTATE_KEYCODE);
+    harddropkey <= (keyboardinput == HARD_DROP_KEYCODE);
 	dlayleftkey <= moveleftkey;
 	dlayrightkey <= moverightkey;
 	dlaydownkey <= movedownkey;
 	dlayupkey <= moveupkey;
 	delayrleftkey <= rotateleftkey;
 	delayrrightkey <= rotaterightkey;
+    dlayharddrop <= harddropkey;
+    
+    if((harddropkey != dlayharddrop) & (harddropkey == 1'b1))
+        harddropreg <=1;
+    else if (SIG_PIECEPLACED)
+        harddropreg <= 0;
+
 	if((moveleftkey != dlayleftkey) & (moveleftkey == 1'b1))
 		moveleftreg <= 1;
 	else if(SIG_MOVELEFT)
 		moveleftreg <= 0;
 		
-		
 	if((moverightkey != dlayrightkey) & (moverightkey == 1'b1)) 
 		moverightreg <= 1;
 	else if(SIG_MOVERIGHT)
 		moverightreg <= 0;
-		
 		
 	if((moveupkey != dlayupkey) & (moveupkey == 1'b1)) 
 		moveupreg <= 1;
@@ -102,7 +110,6 @@ logic dlayleftkey, dlayrightkey, dlayupkey, dlaydownkey, delayrleftkey, delayrri
 		rotateleftreg <= 1;
 	else if(SIG_MOVELEFT)
 		rotateleftreg <= 0;	
-		
 		
 	if((rotaterightkey != delayrrightkey) & (rotaterightkey == 1'b1))
 		rotaterightreg <= 1;
@@ -156,12 +163,11 @@ logic dlayleftkey, dlayrightkey, dlayupkey, dlaydownkey, delayrleftkey, delayrri
     always_comb
     begin
     //soft drop case
-    if (keyboardinput == SOFT_DROP_KEYCODE) begin
+    if (keyboardinput == SOFT_DROP_KEYCODE)
         drop = 1;
-    end
-    else begin
+    else
         drop = 0;
-    end
+
         //default signals go here
         //this is where i learned about vscode ctrl+alt+up/down
         //sorry it's ugly but it was very satisfying to write.
@@ -191,6 +197,8 @@ logic dlayleftkey, dlayrightkey, dlayupkey, dlaydownkey, delayrleftkey, delayrri
         unique case (State)
             //BASE STATE
             S_STALL : begin
+                if( collision == 6'b111111)
+                Next_state = S_CLEARALL;
                 if (ground_counter == 4'b1111) begin
                 Next_state = S_PIECE_INSERT;
                 end

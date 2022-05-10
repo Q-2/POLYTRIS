@@ -142,9 +142,11 @@ int main() {
 	BYTE errorflag = 0; //flag once we get an error device so we don't keep dumping out state info
 	BYTE device;
 	WORD keycode;
-
+	BYTE whichpiece = 0;
+	BYTE whichtype = 0;
 	volatile unsigned int *generate_flag_ptr = (unsigned int*)0x130; //pointer to access PIO block
 	volatile unsigned int *random_noise_ptr = (unsigned int*)0x180;
+	volatile unsigned int *piece_ptr = PIECE_PIO_BASE;
 	printf("initializing MAX3421E...\n");
 	MAX3421E_init();
 	printf("initializing USB...\n");
@@ -154,6 +156,244 @@ int main() {
 		printf(".");
 		MAX3421E_Task();
 		USB_Task();
+		if (*generate_flag_ptr != 0) {
+			*piece_ptr = 0b1111111100000000;
+//			whichtype = rand() % 3;
+//			if(whichtype < 2)//sane pieces
+//			{
+//				whichpiece = rand() % 14;
+//				if (whichpiece == 0){
+//				//amogus
+//				*piece_ptr = 0b1111111110001111;}
+//				if (whichpiece == 1){
+//				//amogus
+//				*piece_ptr = 0b1000100010001000;}
+//				if(whichpiece == 2){
+//				*piece_ptr = 0b1000100010001111;}
+//				if(whichpiece == 3){
+//				*piece_ptr = 0b1111111100000000;}
+//				if(whichpiece == 4){
+//				*piece_ptr = 0b1101111010101011;}
+//				if(whichpiece == 5){
+//				*piece_ptr = 0b1100110000000000;}
+//				if(whichpiece == 6){
+//				*piece_ptr = 0b1111110011101111;}
+//				if(whichpiece == 7){
+//				*piece_ptr = 0b1111111111110000;}
+//				if(whichpiece == 8){
+//				*piece_ptr = 0b1110000000000000;}
+//				if(whichpiece == 9){
+//				*piece_ptr = 0b1110110010000000;}
+//				if(whichpiece == 10){
+//				*piece_ptr = 0b1000110010001111;}
+//				if(whichpiece == 11){
+//				*piece_ptr = 0b1000000000000000;}
+//				if(whichpiece == 12){
+//				*piece_ptr = 0b1001111100000000;}
+//				else{
+//					*piece_ptr = 0b1100000000000000;
+//				}
+//			}
+//			else{
+//			whichpiece = rand() % 65;
+//			if (whichpiece == 0){
+//				//amogus
+//				*piece_ptr = 0b1110001111111010;
+//			}
+//			else if(whichpiece	 == 1){
+//				*piece_ptr = 0b0110111100000000;
+//			}
+//			else if(whichpiece == 2){
+//				*piece_ptr = 0b1100011000111111;}
+//			else if(whichpiece == 3){
+//				*piece_ptr = 0b1111000000000000;}
+//			else if(whichpiece == 4){
+//				*piece_ptr = 0b1100110011110000;}
+//			else if(whichpiece == 5){
+//				*piece_ptr = 0b1111111111111111;}
+//			else if(whichpiece == 6){
+//				*piece_ptr = 0b1001100110011001;}
+//			else if(whichpiece == 7){
+//				*piece_ptr = 0b0001110110011111;
+//			}
+//			else if(whichpiece == 8){
+//				*piece_ptr = 0b0001101011101110;
+//			}
+//			else if(whichpiece == 9){
+//				*piece_ptr = 0b1000000000000000;
+//			}
+//			else if(whichpiece == 10){
+//				*piece_ptr = 0b1111011001100110;
+//			}
+//			else if(whichpiece == 11){
+//				*piece_ptr = 0b0111100111110100;
+//			}
+//			else if(whichpiece == 12){
+//				*piece_ptr = 0b1010101111101011;
+//			}
+//			else if(whichpiece == 13){
+//				*piece_ptr = 0b0100010001001010;
+//			}
+//			else if(whichpiece == 14){
+//				*piece_ptr = 0b1110100110011110;
+//			}
+//			else if(whichpiece == 15){
+//				*piece_ptr = 0b1111100110111111;
+//			}
+//			else if(whichpiece == 16){
+//				*piece_ptr = 0b1111100010001111;
+//			}
+//			else if(whichpiece == 17){
+//				*piece_ptr = 0b1010101111101011;
+//			}
+//			else if(whichpiece == 18){
+//				*piece_ptr = 0b1000100011001100;
+//			}
+//			else if(whichpiece == 19){
+//				*piece_ptr = 0b1000100010001111;
+//			}
+//			else if(whichpiece == 20){
+//				*piece_ptr = 0b1111100110011111;
+//			}
+//			else if(whichpiece == 21){
+//				*piece_ptr = 0b1000000000000000;
+//			}
+//			else if(whichpiece == 22){
+//				*piece_ptr = 0b1000100000000000;
+//			}
+//			else if(whichpiece == 23){
+//				*piece_ptr = 0b1000110011101111;
+//			}
+//			else if(whichpiece == 24){
+//				*piece_ptr = 0b0001001001001000;
+//			}
+//			else if(whichpiece == 25){
+//				*piece_ptr = 0b1111011001101111;
+//			}
+//			else if(whichpiece == 26){
+//				*piece_ptr = 0b1111010001001110;
+//			}
+//			else if(whichpiece == 27){
+//				*piece_ptr = 0b1100110000110011;
+//			}
+//			else if(whichpiece == 28){
+//				*piece_ptr = 0b1100110000000000;
+//			}
+//			else if(whichpiece == 29){
+//				*piece_ptr = 0b1100110011110111;
+//			}
+//			else if(whichpiece == 31){
+//				*piece_ptr = 0b1011101111011101;
+//			}
+//			else if(whichpiece == 32){
+//				*piece_ptr = 0b1111111100000000;
+//			}
+//			else if(whichpiece == 33){
+//				*piece_ptr = 0b1000101000100001;
+//			}
+//			else if(whichpiece == 34){
+//				*piece_ptr = 0b1110001110001110;
+//			}
+//			else if(whichpiece == 35){
+//				*piece_ptr = 0b1100011000110001;
+//			}
+//			else if(whichpiece == 36){
+//				*piece_ptr = 0b1000011101110111;
+//			}
+//			else if(whichpiece == 37){
+//				*piece_ptr = 0b1000110011000100;
+//			}
+//			else if(whichpiece == 38){
+//				*piece_ptr = 0b1010101011101010;
+//			}
+//			else if(whichpiece == 39){
+//				*piece_ptr = 0b1111111100000000;
+//			}
+//			else if(whichpiece == 40){
+//				*piece_ptr = 0b1111111100000000;
+//			}
+//			else if(whichpiece == 41){
+//				*piece_ptr = 0b0110100111111001;
+//			}
+//			else if(whichpiece == 42){
+//				*piece_ptr = 0b0001000100110011;
+//			}
+//			else if(whichpiece == 43){
+//				*piece_ptr = 0b1111100011001000;
+//			}
+//			else if(whichpiece == 44){
+//				*piece_ptr = 0b1100110001001100;
+//			}
+//			else if(whichpiece == 45){
+//				*piece_ptr = 0b1000100011101010;
+//			}
+//			else if(whichpiece == 46){
+//				*piece_ptr = 0b1010010110100101;
+//			}
+//			else if(whichpiece == 47){
+//				*piece_ptr = 0b1111100100111010;
+//			}
+//			else if(whichpiece == 48){
+//				*piece_ptr = 0b1000100000001000;
+//			}
+//			else if(whichpiece == 49){
+//				*piece_ptr = 0b1111111100110011;
+//			}
+//			else if(whichpiece == 49){
+//				*piece_ptr = 0b1111000000000000;
+//			}
+//			else if(whichpiece == 50){
+//				*piece_ptr = 0b1110111011100000;
+//			}
+//			else if(whichpiece == 51){
+//				*piece_ptr = 0b1000000000000000;
+//			}
+//			else if(whichpiece == 52){
+//				*piece_ptr = 0b1100100000000000;
+//			}
+//			else if(whichpiece == 53){
+//				*piece_ptr = 0b1110000000000000;
+//			}
+//			else if(whichpiece == 54){
+//				*piece_ptr = 0b1100000000000000;
+//			}
+//			else if(whichpiece == 55){
+//				*piece_ptr = 0b1000100011110001;
+//			}
+//			else if(whichpiece == 56){
+//				*piece_ptr = 0b1001011001101001;
+//			}
+//			else if(whichpiece == 57){
+//				*piece_ptr = 0b1111111100000000;
+//			}
+//			else if(whichpiece == 58){
+//				*piece_ptr = 0b1111111100000000;
+//			}
+//			else if(whichpiece == 59){
+//				*piece_ptr = 0b0000100010011111;
+//			}
+//			else if(whichpiece == 60){
+//				*piece_ptr = 0b1111111100000000;
+//			}
+//			else if(whichpiece == 61){
+//				*piece_ptr = 0b1000000000000001;
+//			}
+//			else if(whichpiece == 62){
+//				*piece_ptr = 0b1110101010101010;
+//			}
+//			else if(whichpiece == 63){
+//				*piece_ptr = 0b1110000000000000;
+//			}
+//			else if(whichpiece == 64){
+//				*piece_ptr = 0b1001000010010110;
+//			}
+//
+//			else{
+//				*piece_ptr = rand();
+//			}
+		}
+
+
 		//usleep (500000);
 		if (GetUsbTaskState() == USB_STATE_RUNNING) {
 			if (!runningdebugflag) {
@@ -171,7 +411,6 @@ int main() {
 					continue;
 				}
 				printf("keycodes: ");
-				printf("%d                   ",*generate_flag_ptr);
 				for (int i = 0; i < 6; i++) {
 					printf("%x ", kbdbuf.keycode[i]);
 				}
